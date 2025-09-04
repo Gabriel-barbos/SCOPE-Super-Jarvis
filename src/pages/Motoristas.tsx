@@ -11,7 +11,8 @@ export default function Motoristas() {
       </div>
       
       <div className="text-muted-foreground">
-        <p>Gerenciamento de motoristas da frota.</p>
+        <p>Cadastrar motoristas em massa</p>
+        <button></button>
       </div>
     </div>
   )

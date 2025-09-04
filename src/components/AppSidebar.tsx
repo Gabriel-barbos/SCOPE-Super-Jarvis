@@ -62,7 +62,7 @@ export function AppSidebar() {
             </div>
             {open && (
               <div className="text-sidebar-foreground font-semibold">
-                Sistema Frotas
+                Jarvis API - Scope
               </div>
             )}
           </div>

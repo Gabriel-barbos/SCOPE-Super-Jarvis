@@ -11,9 +11,9 @@ import {
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
 const clientes = [
-  { id: 1, name: "Transportadora Alpha", active: true },
-  { id: 2, name: "Logística Beta", active: false },
-  { id: 3, name: "Frota Gamma", active: false },
+  { id: 1, name: "LM Frotas", active: true },
+  { id: 2, name: "Equatorial", active: false },
+  { id: 3, name: "Unidas", active: false },
 ]
 
 export function Header() {
