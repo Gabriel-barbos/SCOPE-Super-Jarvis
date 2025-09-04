@@ -1,5 +1,6 @@
-import { Car, Users, UserCheck, Home } from "lucide-react"
+import { Car, Users, UserCheck, Home, ChevronDown, RefreshCw, UserPlus, UserMinus, Share2, Trash2 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
+import { useState } from "react"
 
 import {
   Sidebar,
@@ -10,20 +11,24 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar"
+
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 
 const items = [
   { 
     title: "Dashboard", 
     url: "/", 
     icon: Home 
-  },
-  { 
-    title: "Veículos", 
-    url: "/veiculos", 
-    icon: Car 
   },
   { 
     title: "Usuários", 
@@ -37,10 +42,39 @@ const items = [
   },
 ]
 
+const vehicleSubItems = [
+  {
+    title: "Atualizar carros",
+    url: "/veiculos/atualizar",
+    icon: RefreshCw
+  },
+  {
+    title: "Registrar no grupo",
+    url: "/veiculos/registrar",
+    icon: UserPlus
+  },
+  {
+    title: "Remover do grupo",
+    url: "/veiculos/remover",
+    icon: UserMinus
+  },
+  {
+    title: "Share de veículos",
+    url: "/veiculos/share",
+    icon: Share2
+  },
+  {
+    title: "Deletar veículos",
+    url: "/veiculos/deletar",
+    icon: Trash2
+  },
+]
+
 export function AppSidebar() {
   const { open } = useSidebar()
   const location = useLocation()
   const currentPath = location.pathname
+  const [vehicleSubmenuOpen, setVehicleSubmenuOpen] = useState(false)
 
   const isActive = (path: string) => {
     if (path === "/") {
@@ -48,6 +82,8 @@ export function AppSidebar() {
     }
     return currentPath.startsWith(path)
   }
+
+  const isVehicleRouteActive = currentPath.startsWith("/veiculos")
 
   return (
     <Sidebar 
@@ -93,6 +129,55 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              
+              {/* Submenu de Veículos */}
+              <SidebarMenuItem>
+                <Collapsible 
+                  open={vehicleSubmenuOpen || isVehicleRouteActive} 
+                  onOpenChange={setVehicleSubmenuOpen}
+                >
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                      className={`
+                        w-full transition-all duration-200 rounded-lg
+                        ${isVehicleRouteActive 
+                          ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium shadow-sm" 
+                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        }
+                      `}
+                    >
+                      <Car className="w-4 h-4" />
+                      <span>Veículos</span>
+                      <ChevronDown className={`ml-auto h-4 w-4 transition-transform duration-200 ${
+                        vehicleSubmenuOpen || isVehicleRouteActive ? "rotate-180" : ""
+                      }`} />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {vehicleSubItems.map((subItem) => (
+                        <SidebarMenuSubItem key={subItem.title}>
+                          <SidebarMenuSubButton 
+                            asChild
+                            className={`
+                              transition-all duration-200 rounded-lg
+                              ${isActive(subItem.url) 
+                                ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium shadow-sm" 
+                                : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                              }
+                            `}
+                          >
+                            <NavLink to={subItem.url}>
+                              <subItem.icon className="w-4 h-4" />
+                              <span>{subItem.title}</span>
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </Collapsible>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

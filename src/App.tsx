@@ -6,6 +6,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Veiculos from "./pages/Veiculos";
+import VeiculosAtualizar from "./pages/VeiculosAtualizar";
+import VeiculosRegistrar from "./pages/VeiculosRegistrar";
+import VeiculosRemover from "./pages/VeiculosRemover";
+import VeiculosShare from "./pages/VeiculosShare";
+import VeiculosDeletar from "./pages/VeiculosDeletar";
 import Usuarios from "./pages/Usuarios";
 import Motoristas from "./pages/Motoristas";
 import NotFound from "./pages/NotFound";
@@ -28,6 +33,31 @@ const App = () => (
             <Route path="/veiculos" element={
               <Layout>
                 <Veiculos />
+              </Layout>
+            } />
+            <Route path="/veiculos/atualizar" element={
+              <Layout>
+                <VeiculosAtualizar />
+              </Layout>
+            } />
+            <Route path="/veiculos/registrar" element={
+              <Layout>
+                <VeiculosRegistrar />
+              </Layout>
+            } />
+            <Route path="/veiculos/remover" element={
+              <Layout>
+                <VeiculosRemover />
+              </Layout>
+            } />
+            <Route path="/veiculos/share" element={
+              <Layout>
+                <VeiculosShare />
+              </Layout>
+            } />
+            <Route path="/veiculos/deletar" element={
+              <Layout>
+                <VeiculosDeletar />
               </Layout>
             } />
             <Route path="/usuarios" element={
