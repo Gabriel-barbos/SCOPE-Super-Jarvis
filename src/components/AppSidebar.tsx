@@ -33,11 +33,16 @@ const items = [
   { 
     title: "Usuários", 
     url: "/usuarios", 
-    icon: Users 
+    icon: UserPlus 
   },
   { 
     title: "Motoristas", 
     url: "/motoristas", 
+    icon: UserCheck 
+  },
+    { 
+    title: "Rotinas", 
+    url: "/rotinas", 
     icon: UserCheck 
   },
 ]

@@ -1,4 +1,4 @@
-import { Users } from "lucide-react"
+import { UserPlus } from "lucide-react"
 import { ExcelButtons } from "@/components/ExcelButtons"
 
 export default function Usuarios() {
@@ -7,7 +7,7 @@ export default function Usuarios() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-            <Users className="w-4 h-4 text-white" />
+            <UserPlus className="w-4 h-4 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-foreground">Usuários</h1>
         </div>

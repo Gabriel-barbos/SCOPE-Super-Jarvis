@@ -1,61 +1,66 @@
-import React from 'react';
+import { useState } from "react";
 import { UserCheck, Users } from "lucide-react";
 import { ExcelButtons } from "@/components/ExcelButtons";
 import InsertManyTable from "@/components/InsertManyTable";
+import { ImportExcelModal } from "@/components/ImportModal";
+import DriverService from "@/services/DriverService";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 
 export default function Motoristas() {
+  const [openImport, setOpenImport] = useState(false);
+  const [importedData, setImportedData] = useState<any[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [log, setLog] = useState<string[]>([]);
+  const [openDialog, setOpenDialog] = useState(false);
+
   const motoristasColumns = [
-    { 
-      key: 'nomeCompleto', 
-      label: 'Nome Completo', 
-      required: true, 
-      placeholder: 'Digite o nome completo do motorista' 
-    },
-    { 
-      key: 'codigoMzone', 
-      label: 'Código MZone', 
-      required: true, 
-      placeholder: 'Ex: MZ001, MZ002...' 
-    },
-    { 
-      key: 'idDriver', 
-      label: 'ID Driver', 
-      required: false, 
-      placeholder: 'ID único do motorista' 
-    }
+    { key: "nomeCompleto", label: "Nome Completo", required: true },
+    { key: "codigoMzone", label: "Código MZone", required: true },
+    { key: "idDriver", label: "ID Driver", required: false },
   ];
 
-  // Função para enviar dados para o servidor (inserção manual)
-  const handleSubmitMotoristas = async (data) => {
+  const handleSubmitMotoristas = async (data: any[]) => {
+    if (!data.length) return alert("Nenhum motorista para cadastrar.");
+
+    setIsSubmitting(true);
+    setOpenDialog(true);
+    setProgress(0);
+    setTotal(data.length);
+    setLog([]);
+
     try {
-      // Sua requisição para o servidor
-      const response = await api.post('/motoristas/batch', data);
-      alert(`${data.length} motorista(s) cadastrado(s) com sucesso!`);
-    } catch (error) {
-      alert('Erro ao cadastrar motoristas: ' + error.message);
-      throw error; // Re-throw para que o componente não limpe a tabela
+      await DriverService.cadastrarMotoristasEmLote(
+        data,
+        10,
+        (sent, total, nome) => {
+          setProgress(sent);
+          setTotal(total);
+          setLog((prev) => [...prev, `Motorista ${nome} criado com sucesso!`]);
+        }
+      );
+    } catch (error: any) {
+      console.error("Erro ao cadastrar motoristas:", error);
+      setLog((prev) => [...prev, `❌ Erro ao cadastrar motoristas. Veja o console.`]);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Função para importar dados do Excel
-  const handleImportMotoristas = async (data) => {
-    try {
-      // Preparar dados para envio (remover _id temporário)
-      const cleanData = data.map(({ _id, ...rest }) => rest);
-      
-      const response = await api.post('/motoristas/batch', cleanData);
-      alert(`${cleanData.length} motorista(s) importado(s) com sucesso!`);
-    } catch (error) {
-      alert('Erro ao importar motoristas: ' + error.message);
-      throw error;
-    }
-  };
-
-  // Função para exportar template Excel
-  const handleExportTemplate = () => {
-    // Implementar export do template baseado nas colunas
-    console.log('Exportando template para:', motoristasColumns);
-    alert('Template Excel será baixado em breve');
+  const handleDownloadTemplate = () => {
+    alert("Aqui você pode gerar e baixar o modelo de motoristas...");
   };
 
   return (
@@ -65,23 +70,61 @@ export default function Motoristas() {
           <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
             <UserCheck className="w-4 h-4 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground">Motoristas</h1>
+          <h1 className="text-3xl font-bold text-foreground">Cadastrar Motoristas</h1>
         </div>
-        
-        <ExcelButtons 
-          columns={motoristasColumns}
-          onImport={handleImportMotoristas}
-          onExport={handleExportTemplate}
-          importTitle="Importar Motoristas"
+        <ExcelButtons
+          onDownload={handleDownloadTemplate}
+          onImport={() => setOpenImport(true)}
         />
       </div>
-      
-      <InsertManyTable 
+
+      <InsertManyTable
         columns={motoristasColumns}
+        initialData={importedData.length ? importedData : []}
         onSubmit={handleSubmitMotoristas}
-        submitButtonText="Cadastrar Motoristas"
+        submitButtonText={isSubmitting ? "Enviando..." : "Cadastrar Motoristas"}
         icon={Users}
+        disabled={isSubmitting}
       />
+
+      <ImportExcelModal
+        open={openImport}
+        onClose={() => setOpenImport(false)}
+        columns={motoristasColumns}
+        onImport={setImportedData}
+      />
+
+      {/* Dialog de progresso */}
+      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+        <DialogContent className="sm:max-w-lg w-full">
+          <DialogHeader>
+            <DialogTitle>Cadastrando motoristas...</DialogTitle>
+            <DialogDescription>
+              {progress}/{total} motoristas processados
+            </DialogDescription>
+          </DialogHeader>
+
+          <Progress value={(progress / total) * 100} className="my-4" />
+
+          <ScrollArea className="h-48 border rounded p-2 bg-background">
+            {log.map((item, index) => (
+              <p key={index} className="text-sm text-foreground">
+                {item}
+              </p>
+            ))}
+          </ScrollArea>
+
+          <DialogFooter>
+            <Button
+              disabled={isSubmitting}
+              onClick={() => setOpenDialog(false)}
+              variant="secondary"
+            >
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
