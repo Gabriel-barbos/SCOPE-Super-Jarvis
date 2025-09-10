@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CalendarClock, Loader2, Eye, Car } from "lucide-react";
+import { CalendarClock, Loader2, Eye, Car, Play,Timer } from "lucide-react";
 import UnidasService, { Veiculo } from "../services/UnidasService";
 import {
   Card,
@@ -114,7 +114,7 @@ export default function Rotinas() {
           </div>
 
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">Programar</Button>
+            <Button variant="outline" size="sm">Programar <Timer/></Button>
             <Button
               variant="default"
               className="bg-white hover:from-blue-600 hover:to-indigo-600"
@@ -130,6 +130,7 @@ export default function Rotinas() {
               ) : (
                 "Executar"
               )}
+              <Play/>
             </Button>
           </div>
         </CardHeader>
@@ -213,7 +214,7 @@ export default function Rotinas() {
           {executionTime ? (
             `Última execução: ${executionTime}`
           ) : (
-            "Última execução: 05/09/2025 às 14:32"
+            "Última execução: 09/09/2025 às 23:32"
           )}
         </CardFooter>
       </Card>

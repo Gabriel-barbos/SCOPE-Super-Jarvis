@@ -2,10 +2,45 @@ import express from "express";
 import fetch from "node-fetch";
 import cors from "cors";
 
+// Importar o scheduler (isso ativa automaticamente o agendamento)
+import "./scheduler.js";
+import { executarRotinaManual, getProximaExecucao } from "./scheduler.js";
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ✅ NOVO: Endpoint para executar rotina manualmente
+app.post("/api/executar-rotina-unidas", async (req, res) => {
+  try {
+    console.log("🚀 Executando rotina Unidas manualmente...");
+    const resultado = await executarRotinaManual();
+    res.json(resultado);
+  } catch (err) {
+    console.error("❌ Erro ao executar rotina:", err.message);
+    res.status(500).json({ 
+      sucesso: false,
+      error: err.message 
+    });
+  }
+});
+
+// ✅ NOVO: Endpoint para obter informações do agendamento
+app.get("/api/status-rotina", (req, res) => {
+  try {
+    const info = getProximaExecucao();
+    res.json({
+      agendamentoAtivo: true,
+      horario: "8:00 AM (todo dia)",
+      timezone: "America/Sao_Paulo",
+      ...info
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ Endpoint existente: Proxy para API externa
 app.post("/proxy", async (req, res) => {
   try {
     const { path, method = "GET", body: reqBody, headers: extraHeaders, token } = req.body;
@@ -71,7 +106,7 @@ app.post("/proxy", async (req, res) => {
   }
 });
 
-// Endpoint adicional para obter token (se necessário)
+// ✅ Endpoint existente: Obter token
 app.post("/api/get-token", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -102,5 +137,25 @@ app.post("/api/get-token", async (req, res) => {
   }
 });
 
+// ✅ NOVO: Endpoint de health check
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    servidor: "Proxy + Rotinas Automáticas",
+    rotina: getProximaExecucao()
+  });
+});
+
 const PORT = 3001;
-app.listen(PORT, () => console.log(`🚀 Proxy rodando em http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+  console.log(`⏰ Rotina da Unidas agendada para todo dia às 8:00 AM`);
+  console.log(`📋 Próxima execução: ${getProximaExecucao().proximaExecucaoFormatada}`);
+  console.log(`🔗 Endpoints disponíveis:`);
+  console.log(`   POST /api/executar-rotina-unidas - Executar rotina manualmente`);
+  console.log(`   GET  /api/status-rotina - Status do agendamento`);
+  console.log(`   GET  /api/health - Health check`);
+  console.log(`   POST /proxy - Proxy para API externa`);
+  console.log(`   POST /api/get-token - Obter token de autenticação`);
+});
