@@ -1,8 +1,7 @@
-// src/services/proxyApi.ts
 import axios from "axios";
 
 const proxyApi = axios.create({
-  baseURL: "http://localhost:3001", // backend local, troque para o deploy depois
+  baseURL: "http://localhost:3001", 
   timeout: 20000,
 });
 

@@ -1,4 +1,4 @@
-import { Car, Users, UserCheck, Home, ChevronDown, RefreshCw, UserPlus, UserMinus, Share2, Trash2 } from "lucide-react"
+import { Car, Users,CalendarClock, UserCheck, Home, ChevronDown, RefreshCw, UserPlus, UserMinus, Share2, Trash2 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 import { useState } from "react"
 
@@ -43,7 +43,7 @@ const items = [
     { 
     title: "Rotinas", 
     url: "/rotinas", 
-    icon: UserCheck 
+    icon: CalendarClock 
   },
 ]
 
