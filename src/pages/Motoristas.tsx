@@ -167,12 +167,11 @@ export default function Motoristas() {
         {log.length > 0 && (
           <div className="flex justify-center">
             <Button
-              variant="outline"
+              variant="link"
               onClick={() => setShowDetails(!showDetails)}
               className="flex items-center gap-2"
               size="sm"
             >
-              <Eye className="w-4 h-4" />
               {showDetails ? 'Ocultar' : 'Ver'} Detalhes
             </Button>
           </div>

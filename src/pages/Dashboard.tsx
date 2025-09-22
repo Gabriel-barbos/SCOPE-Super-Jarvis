@@ -1,5 +1,4 @@
 import { Home } from "lucide-react"
-import { ExcelButtons } from "@/components/ExcelButtons"
 
 export default function Dashboard() {
   return (
@@ -11,7 +10,6 @@ export default function Dashboard() {
           </div>
           <h1 className="text-3xl font-bold text-foreground">Home</h1>
         </div>
-        <ExcelButtons />
       </div>
       
       <div className="text-muted-foreground">
