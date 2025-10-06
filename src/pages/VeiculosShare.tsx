@@ -24,6 +24,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import ShareService from "@/services/ShareService";
 
 interface UserGroup {
@@ -39,8 +46,11 @@ interface ProgressState {
   current?: string;
 }
 
+type ShareType = "description" | "vin";
+
 export default function VeiculosShare() {
   const [descriptions, setDescriptions] = useState("");
+  const [shareType, setShareType] = useState<ShareType>("description");
   const [userGroups, setUserGroups] = useState<UserGroup[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<UserGroup | null>(null);
   const [loadingGroups, setLoadingGroups] = useState(false);
@@ -78,14 +88,14 @@ export default function VeiculosShare() {
     setProcessing(true);
     setProgress({ sent: 0, total: 0, success: 0, errors: [] });
 
-    const descriptionsArray = descriptions
+    const dataArray = descriptions
       .split('\n')
       .map(desc => desc.trim())
       .filter(desc => desc.length > 0);
 
     try {
       await ShareService.compartilharVeiculosEmLote(
-        descriptionsArray,
+        dataArray,
         selectedGroup!.id,
         (sent, total, current, success, error) => {
           setProgress(prev => ({
@@ -95,7 +105,8 @@ export default function VeiculosShare() {
             errors: error ? [...prev.errors, error] : prev.errors,
             current
           }));
-        }
+        },
+        shareType // Passa o tipo de compartilhamento para o serviço
       );
       setResultSuccess(true);
     } catch (error) {
@@ -130,8 +141,29 @@ export default function VeiculosShare() {
 
       <div className="p-6 space-y-6 shadow-md border border-border">
         <div className="text-muted-foreground">
-          <p>Compartilhamento de veículos entre contas em lote</p>
+          <div className="flex justify-between items-center mb-4">
+            <p>Compartilhamento de veículos entre contas em lote</p>
+
+            <Button
+              onClick={handleShare}
+              disabled={!descriptions.trim() || !selectedGroup || processing}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground transition-smooth"
+            >
+              {processing ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Processando...</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Share2 className="w-4 h-4" />
+                  <span>Compartilhar Veículos</span>
+                </div>
+              )}
+            </Button>
+          </div>
         </div>
+
 
         {/* Seleção de Grupo */}
         <div className="space-y-2">
@@ -139,20 +171,6 @@ export default function VeiculosShare() {
             <label className="text-sm font-medium text-foreground">
               Grupo de Destino
             </label>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={carregarUserGroups}
-              disabled={loadingGroups}
-              className="text-xs transition-smooth bg-white"
-            >
-              {loadingGroups ? (
-                <Loader2 className="w-3 h-3 animate-spin mr-1" />
-              ) : (
-                <Search className="w-3 h-3 mr-1" />
-              )}
-              Atualizar
-            </Button>
           </div>
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
@@ -207,19 +225,61 @@ export default function VeiculosShare() {
               </Command>
             </PopoverContent>
           </Popover>
-
+          <Button
+            variant="default"
+            size="sm"
+            onClick={carregarUserGroups}
+            disabled={loadingGroups}
+            className="bg-white hover:bg-primary/90 text-primary-foreground transition-smooth"
+          >
+            {loadingGroups ? (
+              <Loader2 className="w-3 h-3 animate-spin mr-1" />
+            ) : (
+              <Search className="w-3 h-3 mr-1" />
+            )}
+            Atualizar
+          </Button>
         </div>
 
-        {/* Textarea para descrições */}
+            
+        {/* Tipo de Compartilhamento */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">
-            Descrições dos Veículos
+            Tipo de Identificação
+          </label>
+          <Select 
+            value={shareType} 
+            onValueChange={(value: ShareType) => setShareType(value)}
+            disabled={processing}
+          >
+            <SelectTrigger className="w-full transition-smooth">
+              <SelectValue placeholder="Selecione o tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="description">Descrição do Veículo</SelectItem>
+              <SelectItem value="vin">Chassi </SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            {shareType === "description" 
+              ? "Use a descrição completa do veículo para identificá-lo" 
+              : "Use o chassi para compartilhar"}
+          </p>
+        </div>
+
+
+        {/* Textarea para descrições/VINs */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">
+            {shareType === "description" ? "Descrições dos Veículos" : "Chassi dos Veículos"}
           </label>
           <Textarea
-            placeholder="Cole as descrições dos veículos aqui (uma por linha)"
+            placeholder={shareType === "description" 
+              ? "Cole as descrições dos veículos aqui (uma por linha)" 
+              : "Cole os chassis dos veículos aqui (um por linha)"}
             value={descriptions}
             onChange={(e) => setDescriptions(e.target.value)}
-            className="min-h-[120px] transition-smooth"
+            className="min-h-[120px] transition-smooth font-mono"
           />
           {descriptionsCount > 0 && (
             <p className="text-sm text-muted-foreground">
@@ -227,8 +287,6 @@ export default function VeiculosShare() {
             </p>
           )}
         </div>
-
-
 
         {/* Barra de Progresso */}
         {processing && (
@@ -250,27 +308,6 @@ export default function VeiculosShare() {
             </div>
           </div>
         )}
-
-        {/* Botão de Ação */}
-        <div className="flex justify-end">
-          <Button
-            onClick={handleShare}
-            disabled={!descriptions.trim() || !selectedGroup || processing}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground transition-smooth"
-          >
-            {processing ? (
-              <div className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Processando...</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Share2 className="w-4 h-4" />
-                <span>Compartilhar Veículos</span>
-              </div>
-            )}
-          </Button>
-        </div>
       </div>
 
       {/* Modal de Confirmação */}
@@ -279,10 +316,10 @@ export default function VeiculosShare() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Share2 className="w-5 h-5 text-primary" />
-              Confirmar Sha
+              Confirmar Share
             </DialogTitle>
             <DialogDescription>
-              Você está prestes a fazer o share de <strong>{descriptionsCount} veículo{descriptionsCount !== 1 ? 's' : ''}</strong> com o grupo:
+              Você está prestes a fazer o share de <strong>{descriptionsCount} veículo{descriptionsCount !== 1 ? 's' : ''}</strong> por <strong>{shareType === "description" ? "Descrição" : "VIN"}</strong> com o grupo:
               <br />
               <strong className="text-foreground">{selectedGroup?.description}</strong>
             </DialogDescription>

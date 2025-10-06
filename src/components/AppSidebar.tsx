@@ -1,4 +1,4 @@
-import { Car, Users,CalendarClock, UserCheck, Home, ChevronDown, RefreshCw, UserPlus, UserMinus, Share2, Trash2 } from "lucide-react"
+import { Car, Brain,CalendarClock,FolderPlus ,FolderMinus, UserCheck, Home, ChevronDown, RefreshCw, UserPlus, UserMinus, Share2, Trash2 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 import { useState } from "react"
 
@@ -54,14 +54,14 @@ const vehicleSubItems = [
     icon: RefreshCw
   },
   {
-    title: "Registrar no grupo",
+    title: "Adicionar ao grupo",
     url: "/veiculos/registrar",
-    icon: UserPlus
+    icon: FolderPlus
   },
   {
     title: "Remover do grupo",
     url: "/veiculos/remover",
-    icon: UserMinus
+    icon: FolderMinus 
   },
   {
     title: "Share de veículos",
@@ -99,7 +99,7 @@ export function AppSidebar() {
         <div className="p-4 border-b border-sidebar-border">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-              <Car className="w-4 h-4 text-white" />
+              <Brain className="w-4 h-4 text-white" />
             </div>
             {open && (
               <div className="text-sidebar-foreground font-semibold">

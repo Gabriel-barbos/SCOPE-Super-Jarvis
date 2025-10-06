@@ -184,7 +184,7 @@ export default function VeiculosDeletar() {
                     onChange={(e) => setSearchType(e.target.value as "vin")}
                     className="w-4 h-4 text-primary focus:ring-primary focus:ring-2 focus:ring-offset-0 bg-input border-border"
                   />
-                  <span className="text-sm text-foreground">VIN</span>
+                  <span className="text-sm text-foreground">Chassi</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
