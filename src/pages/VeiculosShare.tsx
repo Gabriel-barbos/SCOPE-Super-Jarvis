@@ -106,7 +106,7 @@ export default function VeiculosShare() {
             current
           }));
         },
-        shareType // Passa o tipo de compartilhamento para o serviço
+        shareType 
       );
       setResultSuccess(true);
     } catch (error) {

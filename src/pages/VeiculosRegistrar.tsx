@@ -4,49 +4,8 @@ import ManualAddTab from "../components/ManualAddTab"
 import FilterWithoutGroupTab from "../components/FilterWithoutGroupTab"
 import ConfirmModal from "../components/ConfirmModal"
 import ProgressModal from "../components/ProgressModal"
+import addVehiclesToGroup from "@/services/AddGroupService";
 
-// Mock service - você deve substituir pelo seu serviço real
-const addToGroupService = {
-  buscarVeiculosSemGrupo: async () => {
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    return [
-      { id: 1, vin: "1HGBH41JXMN109186", description: "Honda Accord 2021" },
-      { id: 2, vin: "WBAFG9C50DD123456", description: "BMW 330i 2020" },
-      { id: 3, vin: "5YJSA1E14HF000001", description: "Tesla Model S 2017" }
-    ]
-  },
-  
-  adicionarVeiculosEmLote: async (searchTerms, searchType, groupId, onProgress) => {
-    const results = []
-    for (let i = 0; i < searchTerms.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 800))
-      const success = Math.random() > 0.2
-      results.push({
-        success,
-        vehicleInfo: searchTerms[i],
-        error: success ? null : "Veículo não encontrado ou já pertence a um grupo"
-      })
-      onProgress(i + 1, searchTerms.length, searchTerms[i], success)
-    }
-    return results
-  },
-  
-  adicionarTodosVeiculosSemGrupo: async (groupId, onProgress) => {
-    const vehicles = await addToGroupService.buscarVeiculosSemGrupo()
-    const results = []
-    for (let i = 0; i < vehicles.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 800))
-      const success = Math.random() > 0.15
-      results.push({
-        success,
-        vehicleInfo: `${vehicles[i].vin} - ${vehicles[i].description}`,
-        error: success ? null : "Erro ao adicionar ao grupo"
-      })
-      onProgress(i + 1, vehicles.length, `${vehicles[i].vin} - ${vehicles[i].description}`, success)
-    }
-    return results
-  }
-}
 
 export default function VeiculosAdicionarGrupo() {
   

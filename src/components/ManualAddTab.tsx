@@ -60,7 +60,7 @@ export default function ManualAddTab({ groupId, setGroupId, isAdding, onAdd }) {
       </div>
 
       <div>
-        <label htmlFor="vehicle-list" className="block text-sm font-medium mb-2 text-foreground">
+        <label htmlFor="vehicle-list" className="block text-sm font-medium mb-1 text-foreground">
           Lista de {searchType === "vin" ? "Chassis" : "Descrições"} (uma por linha):
         </label>
         <textarea
