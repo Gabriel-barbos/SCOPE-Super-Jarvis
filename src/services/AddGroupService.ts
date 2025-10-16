@@ -5,6 +5,12 @@ interface VehicleGroup {
   description: string;
 }
 
+interface VehicleSearchResult {
+  id: string;
+  description: string;
+  vin?: string;
+}
+
 type ShareType = "description" | "vin";
 
 function sanitizeODataString(value: string): string {
@@ -74,6 +80,38 @@ async function buscarVeiculoPorVin(vin: string): Promise<string | null> {
   } catch (err: any) {
     console.error(`❌ Erro ao buscar veículo por VIN ${vin}:`, err.response?.data || err.message);
     return null;
+  }
+}
+
+// Busca veículos "REMOVIDO"
+async function buscarVeiculosRemovidos(): Promise<VehicleSearchResult[]> {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await proxyApi.post(
+      "/proxy",
+      {
+        path: "/Vehicles",
+        method: "GET",
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    const vehicles = res.data.value || [];
+
+    const veiculosRemovidos = vehicles.filter((vehicle: any) =>
+      vehicle.description?.toLowerCase().includes("removido")
+    );
+
+    return veiculosRemovidos.map((vehicle: any) => ({
+      id: vehicle.id,
+      description: vehicle.description,
+      vin: vehicle.vin,
+    }));
+  } catch (err: any) {
+    console.error("❌ Erro ao buscar veículos removidos:", err.response?.data || err.message);
+    throw err;
   }
 }
 
