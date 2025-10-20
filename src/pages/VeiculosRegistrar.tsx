@@ -1,217 +1,565 @@
-import { useState } from "react"
-import { FolderPlus, Filter, Search } from "lucide-react"
-import ManualAddTab from "../components/ManualAddTab"
-import FilterWithoutGroupTab from "../components/FilterWithoutGroupTab"
-import ConfirmModal from "../components/ConfirmModal"
-import ProgressModal from "../components/ProgressModal"
-import addVehiclesToGroup from "@/services/AddGroupService";
+import { useState, useEffect } from "react";
+import { FolderPlus, Search, Loader2, CheckCircle, XCircle, Trash2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  listarVehicleGroups,
+  addVehiclesToGroup,
+  buscarVeiculosRemovidos,
+} from "@/services/AddGroupService";
 
+interface VehicleGroup {
+  id: string;
+  description: string;
+}
 
-export default function VeiculosAdicionarGrupo() {
-  
-  const [vehiclesWithoutGroup, setVehiclesWithoutGroup] = useState([])
-  const [groupId, setGroupId] = useState("")
-  const [isSearching, setIsSearching] = useState(false)
-  const [isAdding, setIsAdding] = useState(false)
-  const [showConfirmModal, setShowConfirmModal] = useState(false)
-  const [showProgressModal, setShowProgressModal] = useState(false)
-  const [addProgress, setAddProgress] = useState({ current: 0, total: 0, currentVehicle: "" })
-  const [addResults, setAddResults] = useState([])
-  const [activeTab, setActiveTab] = useState("manual")
+interface RemovedVehicle {
+  id: string;
+  description: string;
+  vin?: string;
+}
 
-  const handleSearchWithoutGroup = async () => {
-    setIsSearching(true)
+type IdentifierType = "description" | "vin";
+
+export default function VeiculosRegistrar() {
+  const [vehicleGroups, setVehicleGroups] = useState<VehicleGroup[]>([]);
+  const [selectedGroupManual, setSelectedGroupManual] = useState<VehicleGroup | null>(null);
+  const [selectedGroupRemoved, setSelectedGroupRemoved] = useState<VehicleGroup | null>(null);
+  const [identifierType, setIdentifierType] = useState<IdentifierType>("description");
+  const [vehicleData, setVehicleData] = useState("");
+  const [loadingGroups, setLoadingGroups] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [resultSuccess, setResultSuccess] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [removedVehicles, setRemovedVehicles] = useState<RemovedVehicle[]>([]);
+  const [loadingRemovedVehicles, setLoadingRemovedVehicles] = useState(false);
+  const [searchRemovedVehicles, setSearchRemovedVehicles] = useState("");
+
+  useEffect(() => {
+    carregarGrupos();
+  }, []);
+
+  const carregarGrupos = async () => {
+    setLoadingGroups(true);
     try {
-      const vehicles = await addToGroupService.buscarVeiculosSemGrupo()
-      setVehiclesWithoutGroup(vehicles)
-      
-      if (vehicles.length === 0) {
-        alert("Nenhum veículo sem grupo foi encontrado.")
-      }
+      const grupos = await listarVehicleGroups();
+      setVehicleGroups(grupos);
     } catch (error) {
-      alert(`Erro ao buscar veículos sem grupo: ${error.message}`)
+      console.error("Erro ao carregar grupos:", error);
     } finally {
-      setIsSearching(false)
+      setLoadingGroups(false);
     }
-  }
+  };
 
-  const handleManualAdd = async (inputText, searchType) => {
-    if (!inputText.trim()) {
-      alert("Digite pelo menos um Chassi ou descrição!")
-      return
-    }
+  const handleAddVehicles = () => {
+    if (!vehicleData.trim() || !selectedGroupManual) return;
+    setShowConfirmModal(true);
+  };
 
+  const confirmarAdicao = async () => {
+    setShowConfirmModal(false);
+    setProcessing(true);
 
-
-    const searchTerms = inputText
-      .split("\n")
+    const identifiers = vehicleData
+      .split('\n')
       .map(line => line.trim())
-      .filter(line => line.length > 0)
-
-    if (searchTerms.length === 0) {
-      alert("Nenhum item válido encontrado!")
-      return
-    }
-
-    setAddProgress({ current: 0, total: searchTerms.length, currentVehicle: "" })
-    setAddResults([])
-    setShowProgressModal(true)
-    setIsAdding(true)
+      .filter(line => line.length > 0);
 
     try {
-      const results = await addToGroupService.adicionarVeiculosEmLote(
-        searchTerms,
-        searchType,
-        groupId,
-        (processed, total, vehicleInfo, success) => {
-          setAddProgress({ current: processed, total, currentVehicle: vehicleInfo || "" })
-        }
-      )
-      
-      setAddResults(results)
-      
-      const successCount = results.filter(r => r.success).length
-      const errorCount = results.filter(r => !r.success).length
-      
-      if (successCount > 0) {
-        alert(`${successCount} veículo(s) adicionado(s) com sucesso!${errorCount > 0 ? ` ${errorCount} erro(s).` : ''}`)
-      } else {
-        alert("Nenhum veículo foi adicionado. Verifique os resultados.")
-      }
+      const success = await addVehiclesToGroup(
+        selectedGroupManual!.description,
+        identifiers,
+        identifierType
+      );
+      setResultSuccess(success);
     } catch (error) {
-      alert(`Erro ao adicionar veículos: ${error.message}`)
+      console.error("Erro ao adicionar veículos:", error);
+      setResultSuccess(false);
     } finally {
-      setIsAdding(false)
+      setProcessing(false);
+      setShowResultModal(true);
     }
-  }
+  };
 
-  const handleAddWithoutGroup = async () => {
-    if (vehiclesWithoutGroup.length === 0) return
+  const resetForm = () => {
+    setVehicleData("");
+    setSelectedGroupManual(null);
+    setSelectedGroupRemoved(null);
+    setShowResultModal(false);
+  };
 
-    if (!groupId.trim()) {
-      alert("Digite o ID do grupo!")
-      return
-    }
-
-    setAddProgress({ current: 0, total: vehiclesWithoutGroup.length, currentVehicle: "" })
-    setAddResults([])
-    setShowConfirmModal(false)
-    setShowProgressModal(true)
-    setIsAdding(true)
-
+  const carregarVeiculosRemovidos = async () => {
+    setLoadingRemovedVehicles(true);
+    setSearchRemovedVehicles("");
     try {
-      const results = await addToGroupService.adicionarTodosVeiculosSemGrupo(
-        groupId,
-        (processed, total, vehicleInfo, success) => {
-          setAddProgress({ 
-            current: processed, 
-            total, 
-            currentVehicle: vehicleInfo || ""
-          })
-        }
-      )
-      
-      setAddResults(results)
-      
-      const successCount = results.filter(r => r.success).length
-      const errorCount = results.filter(r => !r.success).length
-      
-      if (successCount > 0) {
-        alert(`${successCount} veículo(s) adicionado(s) ao grupo com sucesso!${errorCount > 0 ? ` ${errorCount} erro(s).` : ''}`)
-        setVehiclesWithoutGroup([])
-      } else {
-        alert("Nenhum veículo foi adicionado. Verifique os resultados.")
-      }
-      
+      const veiculos = await buscarVeiculosRemovidos();
+      setRemovedVehicles(veiculos);
     } catch (error) {
-      alert(`Erro ao adicionar veículos ao grupo: ${error.message}`)
+      console.error("Erro ao carregar veículos removidos:", error);
     } finally {
-      setIsAdding(false)
+      setLoadingRemovedVehicles(false);
     }
-  }
+  };
+
+  const adicionarRemovidosAoGrupo = () => {
+    if (removedVehicles.length === 0 || !selectedGroupRemoved) return;
+
+    const descriptions = removedVehicles.map(v => v.description);
+    setProcessing(true);
+
+    addVehiclesToGroup(selectedGroupRemoved.description, descriptions, "description")
+      .then((success) => {
+        setResultSuccess(success);
+        setShowResultModal(true);
+      })
+      .catch((error) => {
+        console.error("Erro ao adicionar veículos:", error);
+        setResultSuccess(false);
+        setShowResultModal(true);
+      })
+      .finally(() => {
+        setProcessing(false);
+      });
+  };
+
+  const filteredRemovedVehicles = removedVehicles.filter(v =>
+    v.description.toLowerCase().includes(searchRemovedVehicles.toLowerCase()) ||
+    (v.vin && v.vin.toLowerCase().includes(searchRemovedVehicles.toLowerCase()))
+  );
+
+  const vehicleCount = vehicleData.split('\n').filter(line => line.trim().length > 0).length;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-elegant">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
             <FolderPlus className="w-4 h-4 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-foreground">Adicionar ao Grupo</h1>
         </div>
       </div>
 
-      <div className="text-muted-foreground">
-        <p>Adicionar veículos a grupos do Mzone de forma automática</p>
-      </div>
+      <Tabs defaultValue="manual" className="w-full">
+        <TabsList>
+          <TabsTrigger value="manual">Inserir Lista</TabsTrigger>
+          <TabsTrigger value="removed">Filtrar Removidos</TabsTrigger>
+        </TabsList>
 
-      {/* Tabs */}
-      <div className="flex border-b border-border">
-        <button
-          onClick={() => setActiveTab("manual")}
-          className={`px-4 py-2 font-medium border-b-2 transition-fast ${
-            activeTab === "manual"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Search className="w-4 h-4 inline mr-2" />
-          Inserir Carros
-        </button>
-        <button
-          onClick={() => setActiveTab("sem-grupo")}
-          className={`px-4 py-2 font-medium border-b-2 transition-fast ${
-            activeTab === "sem-grupo"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Filter className="w-4 h-4 inline mr-2" />
-          Filtrar Removidos
-        </button>
-      </div>
+        {/* Aba: Inserir Lista */}
+        <TabsContent value="manual">
+          <div className="p-6 space-y-6 shadow-md border border-border">
+            <div className="text-muted-foreground">
+              <div className="flex justify-between items-center mb-4">
+                <p>Adicione veículos a grupos específicos em lote</p>
+                <Button
+                  onClick={handleAddVehicles}
+                  disabled={!vehicleData.trim() || !selectedGroupManual || processing}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground transition-smooth"
+                >
+                  {processing ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Processando...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <FolderPlus className="w-4 h-4" />
+                      <span>Adicionar Veículos</span>
+                    </div>
+                  )}
+                </Button>
+              </div>
+            </div>
 
-      {/* Tab Content */}
-      <div className="space-y-4">
-        {activeTab === "manual" && (
-          <ManualAddTab
-            groupId={groupId}
-            setGroupId={setGroupId}
-            isAdding={isAdding}
-            onAdd={handleManualAdd}
-          />
-        )}
+            {/* Seleção de Grupo (Manual) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-foreground">
+                  Grupo de Veículos
+                </label>
+              </div>
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-full justify-between transition-smooth"
+                    disabled={loadingGroups}
+                  >
+                    {loadingGroups ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Carregando grupos...</span>
+                      </div>
+                    ) : selectedGroupManual ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
+                        <span>{selectedGroupManual.description}</span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">Selecione um grupo...</span>
+                    )}
+                    <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command>
+                    <CommandInput placeholder="Buscar grupo..." />
+                    <CommandList>
+                      <CommandEmpty>Nenhum grupo encontrado.</CommandEmpty>
+                      <CommandGroup>
+                        {vehicleGroups.map((group) => (
+                          <CommandItem
+                            key={group.id}
+                            onSelect={() => {
+                              setSelectedGroupManual(group);
+                              setOpen(false);
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2 w-full">
+                              <div className="w-2 h-2 bg-primary rounded-full"></div>
+                              <div className="flex-1">
+                                <p className="font-medium text-foreground">{group.description}</p>
+                              </div>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={carregarGrupos}
+                disabled={loadingGroups}
+                className="bg-white hover:bg-primary/90 text-primary-foreground transition-smooth"
+              >
+                {loadingGroups ? (
+                  <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                ) : (
+                  <Search className="w-3 h-3 mr-1" />
+                )}
+                Atualizar
+              </Button>
+            </div>
 
-        {activeTab === "sem-grupo" && (
-          <FilterWithoutGroupTab
-            groupId={groupId}
-            setGroupId={setGroupId}
-            vehiclesWithoutGroup={vehiclesWithoutGroup}
-            isSearching={isSearching}
-            isAdding={isAdding}
-            onSearch={handleSearchWithoutGroup}
-            onAddAll={() => setShowConfirmModal(true)}
-          />
-        )}
-      </div>
+            {/* Tipo de Identificação */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Tipo de Identificação
+              </label>
+              <Select
+                value={identifierType}
+                onValueChange={(value: IdentifierType) => setIdentifierType(value)}
+                disabled={processing}
+              >
+                <SelectTrigger className="w-full transition-smooth">
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="description">Descrição do Veículo</SelectItem>
+                  <SelectItem value="vin">Chassi (VIN)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {identifierType === "description"
+                  ? "Use a descrição completa do veículo para identificá-lo"
+                  : "Use o número do chassi  para identificar o veículo"}
+              </p>
+            </div>
 
-      {/* Modals */}
-      <ConfirmModal
-        show={showConfirmModal}
-        vehicleCount={vehiclesWithoutGroup.length}
-        groupId={groupId}
-        onConfirm={handleAddWithoutGroup}
-        onCancel={() => setShowConfirmModal(false)}
-      />
+            {/* Textarea para dados */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                {identifierType === "description" ? "Descrições dos Veículos" : "Chassis dos Veículos"}
+              </label>
+              <Textarea
+                placeholder={identifierType === "description"
+                  ? "Cole as descrições dos veículos aqui (uma por linha)"
+                  : "Cole os números de chassi aqui (um por linha)"}
+                value={vehicleData}
+                onChange={(e) => setVehicleData(e.target.value)}
+                className="min-h-[120px] transition-smooth font-mono"
+                disabled={processing}
+              />
+              {vehicleCount > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {vehicleCount} veículo{vehicleCount !== 1 ? 's' : ''} para adicionar
+                </p>
+              )}
+            </div>
 
-      <ProgressModal
-        show={showProgressModal}
-        progress={addProgress}
-        results={addResults}
-        isAdding={isAdding}
-        onClose={() => setShowProgressModal(false)}
-      />
+            {/* Barra de Progresso durante processamento */}
+            {processing && (
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-foreground">
+                    Adicionando veículos...
+                  </span>
+                </div>
+                <Progress value={50} className="w-full" />
+                <p className="text-xs text-muted-foreground">
+                  Processando sua solicitação...
+                </p>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Aba: Filtrar Removidos */}
+        <TabsContent value="removed">
+          <div className="p-6 space-y-6 shadow-md border border-border">
+            {/* Seleção de Grupo (Removed) + Ações */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Grupo de Destino</label>
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-full justify-between transition-smooth"
+                    disabled={loadingGroups}
+                  >
+                    {loadingGroups ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Carregando grupos...</span>
+                      </div>
+                    ) : selectedGroupRemoved ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
+                        <span>{selectedGroupRemoved.description}</span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">Selecione um grupo...</span>
+                    )}
+                    <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command>
+                    <CommandInput placeholder="Buscar grupo..." />
+                    <CommandList>
+                      <CommandEmpty>Nenhum grupo encontrado.</CommandEmpty>
+                      <CommandGroup>
+                        {vehicleGroups.map((group) => (
+                          <CommandItem
+                            key={group.id}
+                            onSelect={() => {
+                              setSelectedGroupRemoved(group);
+                              setOpen(false);
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2 w-full">
+                              <div className="w-2 h-2 bg-primary rounded-full"></div>
+                              <div className="flex-1">
+                                <p className="font-medium text-foreground">{group.description}</p>
+                              </div>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={carregarVeiculosRemovidos}
+                  disabled={loadingRemovedVehicles}
+                  className="flex items-center gap-2"
+                >
+                  {loadingRemovedVehicles ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Filtrando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      <span>Filtrar Removidos</span>
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={adicionarRemovidosAoGrupo}
+                  disabled={processing || !selectedGroupRemoved || removedVehicles.length === 0}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  {processing ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Adicionando...</span>
+                    </div>
+                  ) : (
+                    <span>Adicionar ao Grupo</span>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Busca local e lista de removidos */}
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Buscar por descrição ou VIN..."
+                  value={searchRemovedVehicles}
+                  onChange={(e) => setSearchRemovedVehicles(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-border rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              <div className="space-y-2 max-h-[400px] overflow-y-auto border border-border rounded-md p-4 bg-muted/30">
+                {loadingRemovedVehicles ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                  </div>
+                ) : filteredRemovedVehicles.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    {removedVehicles.length === 0
+                      ? "Nenhum veículo removido encontrado"
+                      : "Nenhum resultado para sua busca"}
+                  </div>
+                ) : (
+                  filteredRemovedVehicles.map((vehicle) => (
+                    <div
+                      key={vehicle.id}
+                      className="p-3 rounded-md border border-border bg-background hover:bg-muted/50 transition-colors"
+                    >
+                      <p className="font-medium text-foreground truncate">
+                        {vehicle.description}
+                      </p>
+                      {vehicle.vin && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          VIN: {vehicle.vin}
+                        </p>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {removedVehicles.length > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  Exibindo {filteredRemovedVehicles.length} de {removedVehicles.length} veículo{removedVehicles.length !== 1 ? 's' : ''}
+                </div>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Modal de Confirmação (apenas fluxo manual) */}
+      <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FolderPlus className="w-5 h-5 text-primary" />
+              Confirmar Adição
+            </DialogTitle>
+            <DialogDescription>
+              Você está prestes a adicionar <strong>{vehicleCount} veículo{vehicleCount !== 1 ? 's' : ''}</strong> por <strong>{identifierType === "description" ? "Descrição" : "Chassi"}</strong> ao grupo:
+              <br />
+              <strong className="text-foreground">{selectedGroupManual?.description}</strong>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConfirmModal(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={confirmarAdicao} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Resultado (compartilhado) */}
+      <Dialog open={showResultModal} onOpenChange={setShowResultModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {resultSuccess ? (
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              ) : (
+                <XCircle className="w-5 h-5 text-red-600" />
+              )}
+              {resultSuccess ? "Veículos Adicionados!" : "Erro na Adição"}
+            </DialogTitle>
+            <DialogDescription>
+              {resultSuccess ? (
+                <div className="space-y-2">
+                  <p>
+                    Os veículos foram adicionados ao grupo <strong>{selectedGroupManual?.description || selectedGroupRemoved?.description}</strong>.
+                  </p>
+                  <div className="text-green-600">
+                    Operação concluída com sucesso
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p>Ocorreu um erro ao adicionar os veículos.</p>
+                  <div className="text-red-600">
+                    Verifique o console para mais detalhes
+                  </div>
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={resetForm} variant="outline">
+              Limpar Dados
+            </Button>
+            <Button onClick={() => setShowResultModal(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
-  )
+  );
 }

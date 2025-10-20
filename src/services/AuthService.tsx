@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Seleciona cliente e gera token
 async function selecionarCliente(cliente: Cliente) {
   try {
-    const res = await fetch("/api/get-token", {
+    const res = await fetch("http://localhost:3001/api/get-token", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: cliente.username, password: cliente.password }),

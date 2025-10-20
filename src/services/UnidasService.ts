@@ -24,7 +24,7 @@ class UnidasService {
     console.log("➡️ Solicitando token da Unidas...");
 
     try {
-      const res = await axios.post("/api/get-token", {
+      const res = await axios.post("http://localhost:3001/api/get-token", {
         username: "Unidasadm",
         password: "Unidasadm@1qaz",
       });
