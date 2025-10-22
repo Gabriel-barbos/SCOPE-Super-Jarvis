@@ -1,401 +1,340 @@
-import { useState } from "react"
-import { Trash2, Filter, Search, Loader2, X, AlertTriangle } from "lucide-react"
-import deleteVehicleService, { VehicleSearchResult, DeleteResult } from "../services/DeleteVehicleService"
+import { useState, useEffect } from "react";
+import { FolderMinus, Search, Loader2, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  listarVehicleGroups,
+  RemoveVehiclesToGroup,
+  buscarVeiculosRemovidos,
+} from "@/services/RemoveGroupService";
 
-export default function VeiculosDeletar() {
-  const [inputText, setInputText] = useState("")
-  const [searchType, setSearchType] = useState<"vin" | "description">("vin")
-  const [removedVehicles, setRemovedVehicles] = useState<VehicleSearchResult[]>([])
-  const [isSearching, setIsSearching] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [showConfirmModal, setShowConfirmModal] = useState(false)
-  const [showProgressModal, setShowProgressModal] = useState(false)
-  const [deleteProgress, setDeleteProgress] = useState({ current: 0, total: 0, currentVehicle: "" })
-  const [deleteResults, setDeleteResults] = useState<DeleteResult[]>([])
-  const [activeTab, setActiveTab] = useState<"manual" | "removidos">("manual")
+import ResultDialog from "@/components/ResultDialog";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import GroupSelector from "@/components/GroupSelector";
+import VehicleInput from "@/components/VehicleInput";
+interface VehicleGroup {
+  id: string;
+  description: string;
+}
 
-  // Busca veículos removidos
-  const handleSearchRemoved = async () => {
-    setIsSearching(true)
+interface RemovedVehicle {
+  id: string;
+  description: string;
+  vin?: string;
+}
+
+type IdentifierType = "description" | "vin";
+
+export default function VeiculosRemover() {
+  const [vehicleGroups, setVehicleGroups] = useState<VehicleGroup[]>([]);
+  const [selectedGroupManual, setSelectedGroupManual] = useState<VehicleGroup | null>(null);
+  const [selectedGroupRemoved, setSelectedGroupRemoved] = useState<VehicleGroup | null>(null);
+  const [identifierType, setIdentifierType] = useState<IdentifierType>("description");
+  const [vehicleData, setVehicleData] = useState("");
+  const [loadingGroups, setLoadingGroups] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [openManual, setOpenManual] = useState(false);
+  const [openRemoved, setOpenRemoved] = useState(false);
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [resultSuccess, setResultSuccess] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [removedVehicles, setRemovedVehicles] = useState<RemovedVehicle[]>([]);
+  const [loadingRemovedVehicles, setLoadingRemovedVehicles] = useState(false);
+  const [searchRemovedVehicles, setSearchRemovedVehicles] = useState("");
+
+  useEffect(() => {
+    carregarGrupos();
+  }, []);
+
+  const carregarGrupos = async () => {
+    setLoadingGroups(true);
     try {
-      const vehicles = await deleteVehicleService.buscarVeiculosRemovidos()
-      setRemovedVehicles(vehicles)
-      
-      if (vehicles.length === 0) {
-        alert("Nenhum veículo com 'REMOVIDO' foi encontrado.")
-      }
-    } catch (error: any) {
-      alert(`Erro ao buscar veículos removidos: ${error.message}`)
+      const grupos = await listarVehicleGroups();
+      setVehicleGroups(grupos);
+    } catch (error) {
+      console.error("Erro ao carregar grupos:", error);
     } finally {
-      setIsSearching(false)
+      setLoadingGroups(false);
     }
-  }
+  };
 
-  // Deleta veículos da lista manual
-  const handleManualDelete = async () => {
-    if (!inputText.trim()) {
-      alert("Digite pelo menos um Chassi ou descrição!")
-      return
-    }
+  const handleAddVehicles = () => {
+    if (!vehicleData.trim() || !selectedGroupManual) return;
+    setShowConfirmModal(true);
+  };
 
-    const searchTerms = inputText
-      .split("\n")
+  const confirmarAdicao = async () => {
+    setShowConfirmModal(false);
+    setProcessing(true);
+
+    const identifiers = vehicleData
+      .split('\n')
       .map(line => line.trim())
-      .filter(line => line.length > 0)
-
-    if (searchTerms.length === 0) {
-      alert("Nenhum item válido encontrado!")
-      return
-    }
-
-    setDeleteProgress({ current: 0, total: searchTerms.length, currentVehicle: "" })
-    setDeleteResults([])
-    setShowProgressModal(true)
-    setIsDeleting(true)
+      .filter(line => line.length > 0);
 
     try {
-      const results = await deleteVehicleService.excluirVeiculosEmLote(
-        searchTerms,
-        1,
-        (processed, total, vehicleInfo, success) => {
-          setDeleteProgress({ current: processed, total, currentVehicle: vehicleInfo || "" })
-        }
-      )
-      
-      setDeleteResults(results)
-      
-      const successCount = results.filter(r => r.success).length
-      const errorCount = results.filter(r => !r.success).length
-      
-      if (successCount > 0) {
-        alert(`${successCount} veículo(s) deletado(s) com sucesso!${errorCount > 0 ? ` ${errorCount} erro(s).` : ''}`)
-      } else {
-        alert("Nenhum veículo foi deletado. Verifique os resultados.")
-      }
-      
-      setInputText("")
-    } catch (error: any) {
-      alert(`Erro ao deletar veículos: ${error.message}`)
+      const success = await RemoveVehiclesToGroup(
+        selectedGroupManual!.description,
+        identifiers,
+        identifierType
+      );
+      setResultSuccess(success);
+    } catch (error) {
+      console.error("Erro ao retirar veículos:", error);
+      setResultSuccess(false);
     } finally {
-      setIsDeleting(false)
+      setProcessing(false);
+      setShowResultModal(true);
     }
-  }
+  };
 
-  // Deleta veículos removidos
-  const handleDeleteRemoved = async () => {
-    if (removedVehicles.length === 0) return
+  const resetForm = () => {
+    setVehicleData("");
+    setSelectedGroupManual(null);
+    setSelectedGroupRemoved(null);
+    setShowResultModal(false);
+  };
 
-    setDeleteProgress({ current: 0, total: removedVehicles.length, currentVehicle: "" })
-    setDeleteResults([])
-    setShowConfirmModal(false)
-    setShowProgressModal(true)
-    setIsDeleting(true)
+  const carregarVeiculosRemovidos = async () => {
+    setLoadingRemovedVehicles(true);
+    setSearchRemovedVehicles("");
+    try {
+      const veiculos = await buscarVeiculosRemovidos();
+      setRemovedVehicles(veiculos);
+    } catch (error) {
+      console.error("Erro ao carregar veículos removidos:", error);
+    } finally {
+      setLoadingRemovedVehicles(false);
+    }
+  };
+
+  const adicionarRemovidosAoGrupo = async () => {
+    if (removedVehicles.length === 0 || !selectedGroupRemoved) return;
+
+    const descriptions = removedVehicles.map(v => v.description);
+    setProcessing(true);
 
     try {
-      const results = await deleteVehicleService.excluirTodosVeiculosRemovidos(
-        1, 
-        (processed, total, vehicleInfo, success) => {
-          setDeleteProgress({ 
-            current: processed, 
-            total, 
-            currentVehicle: vehicleInfo || ""
-          })
-        }
-      )
-      
-      setDeleteResults(results)
-      
-      const successCount = results.filter(r => r.success).length
-      const errorCount = results.filter(r => !r.success).length
-      
-      if (successCount > 0) {
-        alert(`${successCount} veículo(s) removido(s) deletado(s) com sucesso!${errorCount > 0 ? ` ${errorCount} erro(s).` : ''}`)
-        
-        setRemovedVehicles([])
-      } else {
-        alert("Nenhum veículo foi deletado. Verifique os resultados.")
-      }
-      
-    } catch (error: any) {
-      alert(`Erro ao deletar veículos removidos: ${error.message}`)
+      const success = await RemoveVehiclesToGroup(
+        selectedGroupRemoved.description,
+        descriptions,
+        "description"
+      );
+      setResultSuccess(success);
+    } catch (error) {
+      console.error("Erro ao retirar veículos:", error);
+      setResultSuccess(false);
     } finally {
-      setIsDeleting(false)
+      setProcessing(false);
+      setShowResultModal(true);
     }
-  }
+  };
 
-  const itemCount = inputText.split('\n').filter(line => line.trim().length > 0).length
+  const filteredRemovedVehicles = removedVehicles.filter(v =>
+    v.description.toLowerCase().includes(searchRemovedVehicles.toLowerCase()) ||
+    (v.vin && v.vin.toLowerCase().includes(searchRemovedVehicles.toLowerCase()))
+  );
+
+  const vehicleCount = vehicleData.split('\n').filter(line => line.trim().length > 0).length;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-elegant">
-            <Trash2 className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
+            <FolderMinus className="w-4 h-4 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground">Deletar Veículos</h1>
+          <h1 className="text-3xl font-bold text-foreground">Retirar do Grupo</h1>
         </div>
       </div>
 
-      <div className="text-muted-foreground">
-        <p>Excluir carros do Mzone de forma automatica</p>
-      </div>
+      <Tabs defaultValue="manual" className="w-full">
+        <TabsList>
+          <TabsTrigger value="manual">Inserir Lista</TabsTrigger>
+          <TabsTrigger value="removed">Filtrar Removidos</TabsTrigger>
+        </TabsList>
 
-      {/* Tabs */}
-      <div className="flex border-b border-border">
-        <button
-          onClick={() => setActiveTab("manual")}
-          className={`px-4 py-2 font-medium border-b-2 transition-fast ${
-            activeTab === "manual"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Search className="w-4 h-4 inline mr-2" />
-        Inserir Lista
-        </button>
-        <button
-          onClick={() => setActiveTab("removidos")}
-          className={`px-4 py-2 font-medium border-b-2 transition-fast ${
-            activeTab === "removidos"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Filter className="w-4 h-4 inline mr-2" />
-          Filtrar Removidos
-        </button>
-      </div>
-
-      {/* Tab Content */}
-      <div className="space-y-4">
-        {activeTab === "manual" && (
-          <div className="space-y-4">
-            {/* Switch para tipo de busca */}
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-foreground">Buscar por:</span>
-              <div className="flex items-center gap-6">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="searchType"
-                    value="vin"
-                    checked={searchType === "vin"}
-                    onChange={(e) => setSearchType(e.target.value as "vin")}
-                    className="w-4 h-4 text-primary focus:ring-primary focus:ring-2 focus:ring-offset-0 bg-input border-border"
-                  />
-                  <span className="text-sm text-foreground">Chassi</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="searchType"
-                    value="description"
-                    checked={searchType === "description"}
-                    onChange={(e) => setSearchType(e.target.value as "description")}
-                    className="w-4 h-4 text-primary focus:ring-primary focus:ring-2 focus:ring-offset-0 bg-input border-border"
-                  />
-                  <span className="text-sm text-foreground">Descrição</span>
-                </label>
+        <TabsContent value="manual">
+          <div className="p-6 space-y-6 shadow-md border border-border">
+            <div className="text-muted-foreground">
+              <div className="flex justify-between items-center mb-4">
+                <p>Retira veículos a grupos específicos em lote</p>
+                <Button
+                  onClick={handleAddVehicles}
+                  disabled={!vehicleData.trim() || !selectedGroupManual || processing}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground transition-smooth"
+                >
+                  {processing ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Processando...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <FolderMinus className="w-4 h-4" />
+                      <span>Retirar Veículos</span>
+                    </div>
+                  )}
+                </Button>
               </div>
             </div>
 
-            <div>
-              <label htmlFor="vehicle-list" className="block text-sm font-medium mb-2 text-foreground">
-                Lista de {searchType === "vin" ? "Chassis" : "Descrições"} (uma por linha):
-              </label>
-              <textarea
-                id="vehicle-list"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                placeholder={`Digite ${searchType === "vin" ? "os chassis" : "as descrições dos veículos"}, uma por linha:\n${
-                  searchType === "vin" ? "1HGBH41JXMN109186\nWBAFG9C50DD123456" : "Porsche 911 turbo S 2021\nRenault KWID"
-                }`}
-                className="w-full h-40 px-3 py-2 border border-border bg-background text-foreground rounded-md resize-vertical focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-fast"
-                disabled={isDeleting}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                {itemCount} {itemCount === 1 ? "item" : "itens"} na lista
-              </p>
-            </div>
-            
-            <button
-              onClick={handleManualDelete}
-              disabled={isDeleting || !inputText.trim()}
-              className="flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed transition-fast"
-            >
-              {isDeleting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Trash2 className="w-4 h-4" />
-              )}
-              {isDeleting ? "Processando..." : "Excluir Lista"}
-            </button>
-          </div>
-        )}
+            <GroupSelector
+              vehicleGroups={vehicleGroups}
+              selectedGroup={selectedGroupManual}
+              onSelectGroup={setSelectedGroupManual}
+              loading={loadingGroups}
+              onRefresh={carregarGrupos}
+              open={openManual}
+              onOpenChange={setOpenManual}
+            />
 
-        {activeTab === "removidos" && (
-          <div className="space-y-4">
-            <div className="p-4 bg-muted rounded-lg">
-              <h3 className="font-medium mb-2 text-foreground">Filtrar Veículos Removidos</h3>
-              <p className="text-sm text-muted-foreground">
-                Busque todos os veículos marcados como "REMOVIDO" no Mzone
-              </p>
-            </div>
-            
-            <button
-              onClick={handleSearchRemoved}
-              disabled={isSearching || isDeleting}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-fast"
-            >
-              {isSearching ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Filter className="w-4 h-4" />
-              )}
-              {isSearching ? "Buscando..." : "Filtrar Removidos"}
-            </button>
+            <VehicleInput
+              identifierType={identifierType}
+              onIdentifierTypeChange={setIdentifierType}
+              vehicleData={vehicleData}
+              onVehicleDataChange={setVehicleData}
+              disabled={processing}
+            />
 
-            {/* Lista de veículos removidos */}
-            {removedVehicles.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-foreground">Veículos Encontrados</h3>
-                  <span className="text-sm text-muted-foreground">{removedVehicles.length} veículos</span>
+            {processing && (
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-foreground">
+                    Retirando veículos...
+                  </span>
                 </div>
-
-                <div className="max-h-80 overflow-y-auto border border-border rounded-lg bg-card">
-                  <div className="divide-y divide-border">
-                    {removedVehicles.map((vehicle) => (
-                      <div key={vehicle.id} className="p-3 hover:bg-muted/50 transition-fast">
-                        <p className="font-medium text-sm text-foreground">{vehicle.vin || "VIN não informado"}</p>
-                        <p className="text-xs text-muted-foreground">{vehicle.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setShowConfirmModal(true)}
-                  disabled={isDeleting}
-                  className="flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed transition-fast"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Excluir Todos ({removedVehicles.length})
-                </button>
+                <Progress value={50} className="w-full" />
+                <p className="text-xs text-muted-foreground">
+                  Processando sua solicitação...
+                </p>
               </div>
             )}
           </div>
-        )}
-      </div>
+        </TabsContent>
 
-      {/* Modal de Confirmação */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-card rounded-lg p-6 w-full max-w-md mx-4 border border-border">
-            <div className="flex items-center gap-3 mb-4">
-              <AlertTriangle className="w-6 h-6 text-destructive" />
-              <h3 className="text-lg font-semibold text-foreground">Confirmar Exclusão</h3>
-            </div>
-            
-            <p className="text-muted-foreground mb-6">
-              Tem certeza que deseja excluir {removedVehicles.length} veículos? Esta ação não pode ser desfeita.
-            </p>
-            
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowConfirmModal(false)}
-                className="px-4 py-2 text-muted-foreground border border-border rounded-md hover:bg-muted transition-fast"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleDeleteRemoved}
-                className="px-4 py-2 bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90 transition-fast"
-              >
-                Excluir Todos
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        <TabsContent value="removed">
+          <div className="p-6 space-y-6 shadow-md border border-border">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Grupo de Destino</label>
+              <GroupSelector
+                vehicleGroups={vehicleGroups}
+                selectedGroup={selectedGroupRemoved}
+                onSelectGroup={setSelectedGroupRemoved}
+                loading={loadingGroups}
+                onRefresh={carregarGrupos}
+                open={openRemoved}
+                onOpenChange={setOpenRemoved}
+                label=""
+              />
 
-      {/* Modal de Progresso */}
-      {showProgressModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-card rounded-lg p-6 w-full max-w-md mx-4 border border-border">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-foreground">Excluindo Veículos</h3>
-              {!isDeleting && (
-                <button
-                  onClick={() => setShowProgressModal(false)}
-                  className="text-muted-foreground hover:text-foreground transition-fast"
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={carregarVeiculosRemovidos}
+                  disabled={loadingRemovedVehicles}
+                  className="flex items-center gap-2"
                 >
-                  <X className="w-5 h-5" />
-                </button>
-              )}
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-foreground">Progresso: {deleteProgress.current} de {deleteProgress.total}</span>
-                <span className="text-muted-foreground">{deleteProgress.total > 0 ? Math.round((deleteProgress.current / deleteProgress.total) * 100) : 0}%</span>
-              </div>
-              
-              <div className="w-full bg-muted rounded-full h-2">
-                <div
-                  className="bg-primary h-2 rounded-full transition-all duration-300"
-                  style={{
-                    width: deleteProgress.total > 0 ? `${(deleteProgress.current / deleteProgress.total) * 100}%` : "0%"
-                  }}
-                ></div>
-              </div>
-              
-              {deleteProgress.currentVehicle && (
-                <p className="text-xs text-muted-foreground">
-                  Processando: {deleteProgress.currentVehicle}
-                </p>
-              )}
-
-              {isDeleting && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Excluindo...</span>
-                </div>
-              )}
-
-              {/* Resultados após conclusão */}
-              {!isDeleting && deleteResults.length > 0 && (
-                <div className="mt-4 space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-foreground">Resultados:</span>
-                    <div className="flex gap-4">
-                      <span className="text-green-400">✅ {deleteResults.filter(r => r.success).length}</span>
-                      <span className="text-destructive">❌ {deleteResults.filter(r => !r.success).length}</span>
+                  {loadingRemovedVehicles ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Filtrando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      <span>Filtrar Removidos</span>
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={adicionarRemovidosAoGrupo}
+                  disabled={processing || !selectedGroupRemoved || removedVehicles.length === 0}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  {processing ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Retirando...</span>
                     </div>
+                  ) : (
+                    <span>Retirar do Grupo</span>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Buscar por descrição ou VIN..."
+                  value={searchRemovedVehicles}
+                  onChange={(e) => setSearchRemovedVehicles(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-border rounded-md bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              <div className="space-y-2 max-h-[400px] overflow-y-auto border border-border rounded-md p-4 bg-muted/30">
+                {loadingRemovedVehicles ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
                   </div>
-                  
-                  <div className="max-h-32 overflow-y-auto text-xs space-y-1">
-                    {deleteResults.slice(0, 5).map((result, index) => (
-                      <div key={index} className={`p-2 rounded ${result.success ? 'bg-green-900/30' : 'bg-destructive/20'}`}>
-                        <span className={result.success ? 'text-green-400' : 'text-destructive'}>
-                          {result.success ? '✅' : '❌'} {result.vehicleInfo}
-                        </span>
-                        {result.error && (
-                          <div className="text-destructive text-xs mt-1">{result.error}</div>
-                        )}
-                      </div>
-                    ))}
-                    {deleteResults.length > 5 && (
-                      <p className="text-muted-foreground text-center">... e mais {deleteResults.length - 5} resultados</p>
-                    )}
+                ) : filteredRemovedVehicles.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    {removedVehicles.length === 0
+                      ? "Nenhum veículo removido encontrado"
+                      : "Nenhum resultado para sua busca"}
                   </div>
+                ) : (
+                  filteredRemovedVehicles.map((vehicle) => (
+                    <div
+                      key={vehicle.id}
+                      className="p-3 rounded-md border border-border bg-background hover:bg-muted/50 transition-colors"
+                    >
+                      <p className="font-medium text-foreground truncate">
+                        {vehicle.description}
+                      </p>
+                      {vehicle.vin && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          VIN: {vehicle.vin}
+                        </p>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {removedVehicles.length > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  Exibindo {filteredRemovedVehicles.length} de {removedVehicles.length} veículo{removedVehicles.length !== 1 ? 's' : ''}
                 </div>
               )}
             </div>
           </div>
-        </div>
-      )}
+        </TabsContent>
+      </Tabs>
+
+      <ConfirmDialog
+        open={showConfirmModal}
+        onOpenChange={setShowConfirmModal}
+        onConfirm={confirmarAdicao}
+        vehicleCount={vehicleCount}
+        identifierType={identifierType}
+        groupName={selectedGroupManual?.description}
+        actionType="remove"
+      />
+
+      <ResultDialog
+        open={showResultModal}
+        onOpenChange={setShowResultModal}
+        success={resultSuccess}
+        groupName={selectedGroupManual?.description || selectedGroupRemoved?.description}
+        onReset={resetForm}
+        actionType="remove"
+      />
     </div>
-  )
+  );
 }

@@ -31,7 +31,7 @@ async function listarVehicleGroups(): Promise<VehicleGroup[]> {
     );
     return res.data.value || [];
   } catch (err: any) {
-    console.error("❌ Erro ao listar grupos:", err.response?.data || err.message);
+    console.error(" Erro ao listar grupos:", err.response?.data || err.message);
     return [];
   }
 }
@@ -55,7 +55,7 @@ async function buscarVeiculo(identifier: string, type: SearchType): Promise<stri
     const vehicles = res.data.value || [];
     return vehicles.length > 0 ? vehicles[0].id : null;
   } catch (err: any) {
-    console.error(`❌ Erro ao buscar veículo (${type}: ${identifier}):`, err.response?.data || err.message);
+    console.error(` Erro ao buscar veículo (${type}: ${identifier}):`, err.response?.data || err.message);
     return null;
   }
 }
@@ -82,7 +82,7 @@ async function buscarVeiculosRemovidos(): Promise<VehicleSearchResult[]> {
         vin: v.vin,
       }));
   } catch (err: any) {
-    console.error("❌ Erro ao buscar veículos removidos:", err.response?.data || err.message);
+    console.error(" Erro ao buscar veículos removidos:", err.response?.data || err.message);
     return [];
   }
 }
@@ -115,7 +115,7 @@ async function addVehiclesToGroup(
     }
 
     if (vehicleIds.length === 0) {
-      console.error("❌ Nenhum veículo válido encontrado.");
+      console.error(" Nenhum veículo válido encontrado.");
       return false;
     }
 
@@ -140,13 +140,13 @@ async function addVehiclesToGroup(
       return true;
     } else {
       console.error(
-        `❌ Falha ao adicionar veículos ao grupo ${groupDescription}. (status ${res.status})`
+        ` Falha ao adicionar veículos ao grupo ${groupDescription}. (status ${res.status})`
       );
       return false;
     }
   } catch (err: any) {
     console.error(
-      "❌ Erro ao adicionar veículos ao grupo:",
+      " Erro ao adicionar veículos ao grupo:",
       err.response?.data || err.message
     );
     return false;
