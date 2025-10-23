@@ -1,48 +1,41 @@
 import { useState, useEffect } from "react";
-import { FolderMinus, Search, Loader2, Trash2 } from "lucide-react";
+import { FolderPlus, Search, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  listarVehicleGroups,
-  addVehiclesToGroup,
-  buscarVeiculosRemovidos,
-} from "@/services/AddGroupService";
-
-import ResultDialog from "@/components/ResultDialog";
+import vehicleService, { type VehicleGroup, type OperationResult, type SearchType } from "@/services/VehicleGroupService";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import OperationReport from "@/components/OperationReport";
 import GroupSelector from "@/components/GroupSelector";
 import VehicleInput from "@/components/VehicleInput";
-interface VehicleGroup {
-  id: string;
-  description: string;
+
+interface ProcessState {
+  active: boolean;
+  current: number;
+  total: number;
+  results: OperationResult[];
 }
 
-interface AddedVehicle {
-  id: string;
-  description: string;
-  vin?: string;
-}
-
-type IdentifierType = "description" | "vin";
-
-export default function VeiculosRemover() {
-  
+export default function VeiculosRegistrar() {
   const [vehicleGroups, setVehicleGroups] = useState<VehicleGroup[]>([]);
   const [selectedGroupManual, setSelectedGroupManual] = useState<VehicleGroup | null>(null);
   const [selectedGroupRemoved, setSelectedGroupRemoved] = useState<VehicleGroup | null>(null);
-  const [identifierType, setIdentifierType] = useState<IdentifierType>("description");
+  const [identifierType, setIdentifierType] = useState<SearchType>("description");
   const [vehicleData, setVehicleData] = useState("");
   const [loadingGroups, setLoadingGroups] = useState(false);
-  const [processing, setProcessing] = useState(false);
   const [openManual, setOpenManual] = useState(false);
   const [openRemoved, setOpenRemoved] = useState(false);
-  const [showResultModal, setShowResultModal] = useState(false);
-  const [resultSuccess, setResultSuccess] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [removedVehicles, setRemovedVehicles] = useState<AddedVehicle[]>([]);
+  const [removedVehicles, setRemovedVehicles] = useState<any[]>([]);
   const [loadingRemovedVehicles, setLoadingRemovedVehicles] = useState(false);
   const [searchRemovedVehicles, setSearchRemovedVehicles] = useState("");
+  const [showConfirmManual, setShowConfirmManual] = useState(false);
+  const [showConfirmRemoved, setShowConfirmRemoved] = useState(false);
+  const [processState, setProcessState] = useState<ProcessState>({
+    active: false,
+    current: 0,
+    total: 0,
+    results: [],
+  });
 
   useEffect(() => {
     carregarGrupos();
@@ -51,7 +44,7 @@ export default function VeiculosRemover() {
   const carregarGrupos = async () => {
     setLoadingGroups(true);
     try {
-      const grupos = await listarVehicleGroups();
+      const grupos = await vehicleService.listarGrupos();
       setVehicleGroups(grupos);
     } catch (error) {
       console.error("Erro ao carregar grupos:", error);
@@ -62,46 +55,46 @@ export default function VeiculosRemover() {
 
   const handleAddVehicles = () => {
     if (!vehicleData.trim() || !selectedGroupManual) return;
-    setShowConfirmModal(true);
+    setShowConfirmManual(true);
   };
 
-  const confirmarAdicao = async () => {
-    setShowConfirmModal(false);
-    setProcessing(true);
+  const confirmarAdicaoManual = async () => {
+    setShowConfirmManual(false);
 
     const identifiers = vehicleData
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+
+    setProcessState({ active: true, current: 0, total: identifiers.length, results: [] });
 
     try {
-      const success = await addVehiclesToGroup(
+      const results = await vehicleService.adicionarVeiculosAoGrupo(
         selectedGroupManual!.description,
         identifiers,
-        identifierType
+        identifierType,
+        (current, total, result) => {
+          setProcessState((prev) => ({
+            ...prev,
+            current,
+            total,
+            results: [...prev.results, result],
+          }));
+        }
       );
-      setResultSuccess(success);
-    } catch (error) {
-      console.error("Erro ao Adicionar veículos:", error);
-      setResultSuccess(false);
-    } finally {
-      setProcessing(false);
-      setShowResultModal(true);
-    }
-  };
 
-  const resetForm = () => {
-    setVehicleData("");
-    setSelectedGroupManual(null);
-    setSelectedGroupRemoved(null);
-    setShowResultModal(false);
+      setProcessState((prev) => ({ ...prev, active: false, results }));
+    } catch (error) {
+      console.error("Erro ao adicionar veículos:", error);
+      setProcessState((prev) => ({ ...prev, active: false }));
+    }
   };
 
   const carregarVeiculosRemovidos = async () => {
     setLoadingRemovedVehicles(true);
     setSearchRemovedVehicles("");
     try {
-      const veiculos = await buscarVeiculosRemovidos();
+      const veiculos = await vehicleService.buscarVeiculosRemovidos();
       setRemovedVehicles(veiculos);
     } catch (error) {
       console.error("Erro ao carregar veículos removidos:", error);
@@ -110,41 +103,62 @@ export default function VeiculosRemover() {
     }
   };
 
-  const adicionarRemovidosAoGrupo = async () => {
+  const handleAddRemovedVehicles = () => {
     if (removedVehicles.length === 0 || !selectedGroupRemoved) return;
+    setShowConfirmRemoved(true);
+  };
 
-    const descriptions = removedVehicles.map(v => v.description);
-    setProcessing(true);
+  const confirmarAdicaoRemovidos = async () => {
+    setShowConfirmRemoved(false);
+
+    const descriptions = removedVehicles.map((v) => v.description);
+    setProcessState({ active: true, current: 0, total: descriptions.length, results: [] });
 
     try {
-      const success = await addVehiclesToGroup(
-        selectedGroupRemoved.description,
+      const results = await vehicleService.adicionarVeiculosAoGrupo(
+        selectedGroupRemoved!.description,
         descriptions,
-        "description"
+        "description",
+        (current, total, result) => {
+          setProcessState((prev) => ({
+            ...prev,
+            current,
+            total,
+            results: [...prev.results, result],
+          }));
+        }
       );
-      setResultSuccess(success);
+
+      setProcessState((prev) => ({ ...prev, active: false, results }));
     } catch (error) {
       console.error("Erro ao adicionar veículos:", error);
-      setResultSuccess(false);
-    } finally {
-      setProcessing(false);
-      setShowResultModal(true);
+      setProcessState((prev) => ({ ...prev, active: false }));
     }
   };
 
-  const filteredRemovedVehicles = removedVehicles.filter(v =>
-    v.description.toLowerCase().includes(searchRemovedVehicles.toLowerCase()) ||
-    (v.vin && v.vin.toLowerCase().includes(searchRemovedVehicles.toLowerCase()))
+  const resetForm = () => {
+    setVehicleData("");
+    setSelectedGroupManual(null);
+    setSelectedGroupRemoved(null);
+    setProcessState({ active: false, current: 0, total: 0, results: [] });
+  };
+
+  const filteredRemovedVehicles = removedVehicles.filter(
+    (v) =>
+      v.description.toLowerCase().includes(searchRemovedVehicles.toLowerCase()) ||
+      (v.vin && v.vin.toLowerCase().includes(searchRemovedVehicles.toLowerCase()))
   );
 
-  const vehicleCount = vehicleData.split('\n').filter(line => line.trim().length > 0).length;
+  const vehicleCount = vehicleData.split("\n").filter((line) => line.trim().length > 0).length;
+  const relatorio = vehicleService.gerarRelatorio(processState.results);
+  const progressPercent = processState.total > 0 ? (processState.current / processState.total) * 100 : 0;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
-            <FolderMinus className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--gradient-primary)" }}>
+            <FolderPlus className="w-4 h-4 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-foreground">Adicionar ao Grupo</h1>
         </div>
@@ -163,17 +177,17 @@ export default function VeiculosRemover() {
                 <p>Adiciona veículos a grupos específicos em lote</p>
                 <Button
                   onClick={handleAddVehicles}
-                  disabled={!vehicleData.trim() || !selectedGroupManual || processing}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground transition-smooth"
+                  disabled={!vehicleData.trim() || !selectedGroupManual || processState.active}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
-                  {processing ? (
+                  {processState.active ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
                       <span>Processando...</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <FolderMinus className="w-4 h-4" />
+                      <FolderPlus className="w-4 h-4" />
                       <span>Adicionar Veículos</span>
                     </div>
                   )}
@@ -196,21 +210,28 @@ export default function VeiculosRemover() {
               onIdentifierTypeChange={setIdentifierType}
               vehicleData={vehicleData}
               onVehicleDataChange={setVehicleData}
-              disabled={processing}
+              disabled={processState.active}
             />
 
-            {processing && (
-              <div className="space-y-2">
+            {processState.active && (
+              <div className="space-y-3 p-4 border border-border rounded-md bg-muted/30">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-foreground">
-                    Adicionando veículos...
+                    Processando {processState.current} de {processState.total}
                   </span>
+                  <span className="text-xs text-muted-foreground">{Math.round(progressPercent)}%</span>
                 </div>
-                <Progress value={50} className="w-full" />
-                <p className="text-xs text-muted-foreground">
-                  Processando sua solicitação...
-                </p>
+                <Progress value={progressPercent} className="w-full" />
               </div>
+            )}
+
+            {processState.results.length > 0 && !processState.active && (
+              <OperationReport
+                report={relatorio}
+                onReset={resetForm}
+                groupName={selectedGroupManual?.description}
+                actionType="add"
+              />
             )}
           </div>
         </TabsContent>
@@ -231,12 +252,7 @@ export default function VeiculosRemover() {
               />
 
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={carregarVeiculosRemovidos}
-                  disabled={loadingRemovedVehicles}
-                  className="flex items-center gap-2"
-                >
+                <Button variant="outline" onClick={carregarVeiculosRemovidos} disabled={loadingRemovedVehicles}>
                   {loadingRemovedVehicles ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -250,11 +266,11 @@ export default function VeiculosRemover() {
                   )}
                 </Button>
                 <Button
-                  onClick={adicionarRemovidosAoGrupo}
-                  disabled={processing || !selectedGroupRemoved || removedVehicles.length === 0}
+                  onClick={handleAddRemovedVehicles}
+                  disabled={processState.active || !selectedGroupRemoved || removedVehicles.length === 0}
                   className="bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
-                  {processing ? (
+                  {processState.active ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
                       <span>Adicionando...</span>
@@ -285,24 +301,13 @@ export default function VeiculosRemover() {
                   </div>
                 ) : filteredRemovedVehicles.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    {removedVehicles.length === 0
-                      ? "Nenhum veículo removido encontrado"
-                      : "Nenhum resultado para sua busca"}
+                    {removedVehicles.length === 0 ? "Nenhum veículo removido encontrado" : "Nenhum resultado para sua busca"}
                   </div>
                 ) : (
                   filteredRemovedVehicles.map((vehicle) => (
-                    <div
-                      key={vehicle.id}
-                      className="p-3 rounded-md border border-border bg-background hover:bg-muted/50 transition-colors"
-                    >
-                      <p className="font-medium text-foreground truncate">
-                        {vehicle.description}
-                      </p>
-                      {vehicle.vin && (
-                        <p className="text-xs text-muted-foreground truncate">
-                          Chassi: {vehicle.vin}
-                        </p>
-                      )}
+                    <div key={vehicle.id} className="p-3 rounded-md border border-border bg-background hover:bg-muted/50 transition-colors">
+                      <p className="font-medium text-foreground truncate">{vehicle.description}</p>
+                      {vehicle.vin && <p className="text-xs text-muted-foreground truncate">Chassi: {vehicle.vin}</p>}
                     </div>
                   ))
                 )}
@@ -310,31 +315,41 @@ export default function VeiculosRemover() {
 
               {removedVehicles.length > 0 && (
                 <div className="text-sm text-muted-foreground">
-                  Exibindo {filteredRemovedVehicles.length} de {removedVehicles.length} veículo{removedVehicles.length !== 1 ? 's' : ''}
+                  Exibindo {filteredRemovedVehicles.length} de {removedVehicles.length} veículo{removedVehicles.length !== 1 ? "s" : ""}
                 </div>
               )}
             </div>
+
+            {processState.results.length > 0 && !processState.active && (
+              <OperationReport
+                report={relatorio}
+                onReset={resetForm}
+                groupName={selectedGroupRemoved?.description}
+                actionType="add"
+              />
+            )}
           </div>
         </TabsContent>
       </Tabs>
 
       <ConfirmDialog
-        open={showConfirmModal}
-        onOpenChange={setShowConfirmModal}
-        onConfirm={confirmarAdicao}
+        open={showConfirmManual}
+        onOpenChange={setShowConfirmManual}
+        onConfirm={confirmarAdicaoManual}
         vehicleCount={vehicleCount}
         identifierType={identifierType}
         groupName={selectedGroupManual?.description}
-        actionType="remove"
+        actionType="add"
       />
 
-      <ResultDialog
-        open={showResultModal}
-        onOpenChange={setShowResultModal}
-        success={resultSuccess}
-        groupName={selectedGroupManual?.description || selectedGroupRemoved?.description}
-        onReset={resetForm}
-        actionType="remove"
+      <ConfirmDialog
+        open={showConfirmRemoved}
+        onOpenChange={setShowConfirmRemoved}
+        onConfirm={confirmarAdicaoRemovidos}
+        vehicleCount={removedVehicles.length}
+        identifierType="description"
+        groupName={selectedGroupRemoved?.description}
+        actionType="add"
       />
     </div>
   );

@@ -5,40 +5,56 @@ interface VehicleGroup {
   description: string;
 }
 
-interface VehicleSearchResult {
+interface Vehicle {
   id: string;
   description: string;
   vin?: string;
 }
 
+interface OperationResult {
+  success: boolean;
+  identifier: string;
+  vehicleInfo?: string;
+  error?: string;
+}
+
+interface ProgressCallback {
+  (processed: number, total: number, currentResult: OperationResult): void;
+}
+
 type SearchType = "description" | "vin";
-type OperationType = "add" | "remove";
 
 function sanitizeODataString(value: string): string {
   return value.replace(/'/g, "''");
 }
 
-async function listarVehicleGroups(): Promise<VehicleGroup[]> {
+function getToken(): string {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("Token não encontrado");
+  return token;
+}
+
+// ========== BUSCA ==========
+
+async function listarGrupos(): Promise<VehicleGroup[]> {
   try {
-    const token = localStorage.getItem("token");
     const res = await proxyApi.post(
       "/proxy",
       {
         path: "/VehicleGroups?$select=id,description",
         method: "GET",
       },
-      { headers: { Authorization: `Bearer ${token}` } }
+      { headers: { Authorization: `Bearer ${getToken()}` } }
     );
     return res.data.value || [];
   } catch (err: any) {
     console.error("❌ Erro ao listar grupos:", err.response?.data || err.message);
-    return [];
+    throw err;
   }
 }
 
-async function buscarVeiculo(identifier: string, type: SearchType): Promise<string | null> {
+async function buscarVeiculo(identifier: string, type: SearchType = "description"): Promise<Vehicle | null> {
   try {
-    const token = localStorage.getItem("token");
     const safeValue = sanitizeODataString(identifier);
     const filterField = type === "vin" ? "vin" : "description";
 
@@ -48,127 +64,217 @@ async function buscarVeiculo(identifier: string, type: SearchType): Promise<stri
         path: `/Vehicles?$filter=${filterField} eq '${safeValue}'&$select=id,description,vin`,
         method: "GET",
       },
-      { headers: { Authorization: `Bearer ${token}` } }
+      { headers: { Authorization: `Bearer ${getToken()}` } }
     );
 
     const vehicles = res.data.value || [];
-    return vehicles.length > 0 ? vehicles[0].id : null;
+    return vehicles.length > 0 ? vehicles[0] : null;
   } catch (err: any) {
     console.error(`❌ Erro ao buscar veículo (${type}: ${identifier}):`, err.response?.data || err.message);
     return null;
   }
 }
 
-async function buscarVeiculosRemovidos(): Promise<VehicleSearchResult[]> {
+async function buscarVeiculosRemovidos(): Promise<Vehicle[]> {
   try {
-    const token = localStorage.getItem("token");
     const res = await proxyApi.post(
       "/proxy",
       {
         path: "/Vehicles?$select=id,description,vin",
         method: "GET",
       },
-      { headers: { Authorization: `Bearer ${token}` } }
+      { headers: { Authorization: `Bearer ${getToken()}` } }
     );
 
     const vehicles = res.data.value || [];
-    return vehicles
-      .filter((v: any) => v.description?.toLowerCase().includes("removido"))
-      .map((v: any) => ({
-        id: v.id,
-        description: v.description,
-        vin: v.vin,
-      }));
+    return vehicles.filter((v: any) => v.description?.toLowerCase().includes("removido"));
   } catch (err: any) {
     console.error("❌ Erro ao buscar veículos removidos:", err.response?.data || err.message);
-    return [];
+    throw err;
   }
 }
 
-/**
- * Adiciona ou remove vários veículos de um grupo
- */
-async function modifyVehiclesInGroup(
-  operation: OperationType, // "add" ou "remove"
+// ========== ADICIONAR ==========
+
+async function adicionarVeiculosAoGrupo(
   groupDescription: string,
-  vehicleIdentifiers: string[],
-  identifierType: SearchType = "description"
-): Promise<{
-  success: boolean;
-  addedOrRemoved: string[];
-  notFound: string[];
-  errors: string[];
-}> {
-  const result = {
-    success: false,
-    addedOrRemoved: [] as string[],
-    notFound: [] as string[],
-    errors: [] as string[],
-  };
+  identifiers: string[],
+  identifierType: SearchType = "description",
+  onProgress?: ProgressCallback
+): Promise<OperationResult[]> {
+  const results: OperationResult[] = [];
+  const total = identifiers.length;
+  let processed = 0;
 
   try {
-    const token = localStorage.getItem("token");
-    const grupos = await listarVehicleGroups();
+    const grupos = await listarGrupos();
     const grupo = grupos.find((g) => g.description === groupDescription);
 
     if (!grupo) {
-      result.errors.push(`Grupo "${groupDescription}" não encontrado.`);
-      return result;
+      throw new Error(`Grupo "${groupDescription}" não encontrado`);
     }
 
+    // Busca e valida veículos
     const vehicleIds: string[] = [];
+    for (const identifier of identifiers) {
+      const vehicle = await buscarVeiculo(identifier, identifierType);
 
-    // Busca todos os veículos e armazena o feedback individual
-    for (const identifier of vehicleIdentifiers) {
-      const vehicleId = await buscarVeiculo(identifier, identifierType);
-      if (!vehicleId) {
-        result.notFound.push(identifier);
-      } else {
-        vehicleIds.push(vehicleId);
-      }
+      const result: OperationResult = vehicle
+        ? {
+            success: true,
+            identifier,
+            vehicleInfo: `${vehicle.description} (${vehicle.vin || "sem VIN"})`,
+          }
+        : {
+            success: false,
+            identifier,
+            error: "Veículo não encontrado",
+          };
+
+      results.push(result);
+      processed++;
+
+      if (vehicle) vehicleIds.push(vehicle.id);
+      if (onProgress) onProgress(processed, total, result);
     }
 
     if (vehicleIds.length === 0) {
-      result.errors.push("Nenhum veículo válido encontrado.");
-      return result;
+      console.warn("⚠️ Nenhum veículo válido encontrado");
+      return results;
     }
 
-    const action = operation === "add" ? "_.addVehicles" : "_.removeVehicles";
-
+    // Adiciona ao grupo
     const res = await proxyApi.post(
       "/proxy",
       {
-        path: `/VehicleGroups(${grupo.id})/${action}`,
+        path: `/VehicleGroups(${grupo.id})/_.addVehicles`,
         method: "POST",
         body: { vehicleIds },
       },
       {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${getToken()}`,
           "Content-Type": "application/json",
         },
       }
     );
 
-    if (res.status === 204 || res.status === 200) {
-      result.success = true;
-      result.addedOrRemoved = vehicleIdentifiers.filter(id => !result.notFound.includes(id));
-      console.log(`✅ ${vehicleIds.length} veículos ${operation === "add" ? "adicionados" : "removidos"} do grupo ${groupDescription}.`);
-    } else {
-      result.errors.push(`Falha ao ${operation === "add" ? "adicionar" : "remover"} veículos. (status ${res.status})`);
+    if (res.status !== 204 && res.status !== 200) {
+      throw new Error(`Falha ao adicionar ao grupo (status ${res.status})`);
     }
 
-    return result;
+    console.log(`✅ ${vehicleIds.length} veículos adicionados ao grupo ${groupDescription}`);
+    return results;
   } catch (err: any) {
-    result.errors.push(err.response?.data || err.message);
-    console.error(`❌ Erro ao ${operation === "add" ? "adicionar" : "remover"} veículos:`, err);
-    return result;
+    console.error("❌ Erro ao adicionar veículos ao grupo:", err.response?.data || err.message);
+    throw err;
   }
 }
 
-export {
-  listarVehicleGroups,
+// ========== REMOVER DO GRUPO ==========
+
+async function removerVeiculosDoGrupo(
+  groupDescription: string,
+  identifiers: string[],
+  identifierType: SearchType = "description",
+  onProgress?: ProgressCallback
+): Promise<OperationResult[]> {
+  const results: OperationResult[] = [];
+  const total = identifiers.length;
+  let processed = 0;
+
+  try {
+    const grupos = await listarGrupos();
+    const grupo = grupos.find((g) => g.description === groupDescription);
+
+    if (!grupo) {
+      throw new Error(`Grupo "${groupDescription}" não encontrado`);
+    }
+
+    // Busca e valida veículos
+    const vehicleIds: string[] = [];
+    for (const identifier of identifiers) {
+      const vehicle = await buscarVeiculo(identifier, identifierType);
+
+      const result: OperationResult = vehicle
+        ? {
+            success: true,
+            identifier,
+            vehicleInfo: `${vehicle.description} (${vehicle.vin || "sem VIN"})`,
+          }
+        : {
+            success: false,
+            identifier,
+            error: "Veículo não encontrado",
+          };
+
+      results.push(result);
+      processed++;
+
+      if (vehicle) vehicleIds.push(vehicle.id);
+      if (onProgress) onProgress(processed, total, result);
+    }
+
+    if (vehicleIds.length === 0) {
+      console.warn("⚠️ Nenhum veículo válido encontrado");
+      return results;
+    }
+
+    // Remove do grupo
+    const res = await proxyApi.post(
+      "/proxy",
+      {
+        path: `/VehicleGroups(${grupo.id})/_.removeVehicles`,
+        method: "POST",
+        body: { vehicleIds },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (res.status !== 204 && res.status !== 200) {
+      throw new Error(`Falha ao remover do grupo (status ${res.status})`);
+    }
+
+    console.log(`✅ ${vehicleIds.length} veículos removidos do grupo ${groupDescription}`);
+    return results;
+  } catch (err: any) {
+    console.error("❌ Erro ao remover veículos do grupo:", err.response?.data || err.message);
+    throw err;
+  }
+}
+
+
+// ========== RELATÓRIOS ==========
+
+function gerarRelatorio(results: OperationResult[]): {
+  total: number;
+  sucessos: number;
+  falhas: number;
+  detalhes: { sucesso: OperationResult[]; falha: OperationResult[] };
+} {
+  const sucesso = results.filter((r) => r.success);
+  const falha = results.filter((r) => !r.success);
+
+  return {
+    total: results.length,
+    sucessos: sucesso.length,
+    falhas: falha.length,
+    detalhes: { sucesso, falha },
+  };
+}
+
+export default {
+  listarGrupos,
   buscarVeiculo,
   buscarVeiculosRemovidos,
-  modifyVehiclesInGroup,
+  adicionarVeiculosAoGrupo,
+  removerVeiculosDoGrupo,
+  gerarRelatorio,
 };
+
+export type { Vehicle, VehicleGroup, OperationResult, ProgressCallback, SearchType };
