@@ -1,5 +1,6 @@
-import { Home } from "lucide-react"
-
+import { FileChartColumn, Home ,FileDown} from "lucide-react"
+import ReportCard from "@/components/ReportCard"
+import ReportCheckCard from "@/components/ReportCheckCard"
 export default function Dashboard() {
   return (
     <div className="space-y-6">
@@ -12,8 +13,11 @@ export default function Dashboard() {
         </div>
       </div>
       
-      <div className="text-muted-foreground">
-        <p>Página principal do sistema </p>
+      <div className="text-muted-foreground gap-2 space-y-3">
+
+        <ReportCard/>
+        <ReportCheckCard/>
+
       </div>
     </div>
   )
