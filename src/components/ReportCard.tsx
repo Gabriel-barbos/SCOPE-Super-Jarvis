@@ -89,7 +89,7 @@ function ReportCard() {
               variant="default"
               onClick={handleGerarRelatorio}
               disabled={loading}
-              className="gap-2"
+              className="gap-2 bg-white"
             >
               {loading ? (
                 <>
