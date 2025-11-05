@@ -60,8 +60,7 @@ async function buscarTodosVeiculos(
         skip += top;
       }
 
-      // Delay para evitar sobrecarga
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 300));
     } catch (error: any) {
       console.error(`Erro ao buscar veículos (skip=${skip}):`, error.message);
       throw new Error(
@@ -174,6 +173,12 @@ async function exportarVeiculos(
       total: 0,
     };
   }
+}
+
+//gerar relatório de veículos personalizado
+async function gerarRelatorioPersonalizado(){
+
+
 }
 
 export default {

@@ -1,6 +1,8 @@
 import { FileChartColumn, Home ,FileDown} from "lucide-react"
 import ReportCard from "@/components/ReportCard"
 import ReportCheckCard from "@/components/ReportCheckCard"
+import CustomReportCard from "@/components/CustomReportCard"
+
 export default function Dashboard() {
   return (
     <div className="space-y-6">
@@ -17,7 +19,7 @@ export default function Dashboard() {
 
         <ReportCard/>
         <ReportCheckCard/>
-
+        <CustomReportCard/>
       </div>
     </div>
   )
