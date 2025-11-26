@@ -3,7 +3,7 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: "https://live.mzoneweb.net/mzone62.api",
-  timeout: 10000,
+  timeout: 30000,
 });
 
 // pega token do localStorage sempre que mandar requisição

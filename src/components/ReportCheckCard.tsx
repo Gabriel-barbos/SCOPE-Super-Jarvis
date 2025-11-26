@@ -56,7 +56,7 @@ function ReportCheckCard() {
                     </div>
 
                     <div className="flex-1">
-                        <h2 className="text-xl font-semibold">Análise de Base <Badge className="ml-2 bg-orange-100 text-orange-800 font-medium px-2 py-1 rounded-lg text-sm">Em desenvolvimento</Badge> <Badge className="ml-2 bg-red-300 text-orange-900 font-medium px-2 py-1 rounded-lg text-sm">Não usar</Badge></h2>
+                        <h2 className="text-xl font-semibold">Análise de Base <Badge className="ml-2 bg-orange-100 text-orange-800 font-medium px-2 py-1 rounded-lg text-sm">Em desenvolvimento</Badge> </h2>
                         <p className="text-sm text-muted-foreground">
                             Busca uma determinada lista de véiculos na base e retorna seu status e situação            </p>
 
@@ -85,7 +85,7 @@ function ReportCheckCard() {
                         <Button
                             variant="default"
                             onClick={handleGerarRelatorio}
-                            disabled={loading}
+                            disabled={true}
                             className="gap-2 bg-white"
                         >
                             {loading ? (

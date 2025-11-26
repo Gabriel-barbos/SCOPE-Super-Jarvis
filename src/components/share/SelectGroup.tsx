@@ -1,5 +1,12 @@
+import { useState } from "react";
 import { RefreshCw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
 import {
   Command,
   CommandEmpty,
@@ -8,46 +15,36 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
-interface VehicleGroup {
+interface UserGroup {
   id: string;
   description: string;
 }
 
-interface GroupSelectorProps {
-  vehicleGroups: VehicleGroup[];
-  selectedGroup: VehicleGroup | null;
-  onSelectGroup: (group: VehicleGroup) => void;
+interface SelectGroupProps {
+  userGroups: UserGroup[];
+  selectedGroup: UserGroup | null;
   loading: boolean;
-  onRefresh: () => void;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  label?: string;
+  onSelect: (group: UserGroup) => void;
+  onReload: () => void;
 }
 
-export default function GroupSelector({
-  vehicleGroups,
+export default function SelectGroup({
+  userGroups,
   selectedGroup,
-  onSelectGroup,
   loading,
-  onRefresh,
-  open,
-  onOpenChange,
-  label = "Grupo de Veículos"
-}: GroupSelectorProps) {
+  onSelect,
+  onReload,
+}: SelectGroupProps) {
+  const [open, setOpen] = useState(false);
+
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-foreground">
-          {label}
-        </label>
-      </div>
-      <Popover open={open} onOpenChange={onOpenChange}>
+      <label className="text-sm font-medium text-foreground">
+        Grupo de Destino
+      </label>
+
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -69,29 +66,30 @@ export default function GroupSelector({
             ) : (
               <span className="text-muted-foreground">Selecione um grupo...</span>
             )}
+
             <RefreshCw className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
+
         <PopoverContent className="w-full p-0">
           <Command>
             <CommandInput placeholder="Buscar grupo..." />
             <CommandList>
               <CommandEmpty>Nenhum grupo encontrado.</CommandEmpty>
+
               <CommandGroup>
-                {vehicleGroups.map((group) => (
+                {userGroups.map((group) => (
                   <CommandItem
                     key={group.id}
                     onSelect={() => {
-                      onSelectGroup(group);
-                      onOpenChange(false);
+                      onSelect(group);
+                      setOpen(false);
                     }}
                     className="cursor-pointer"
                   >
                     <div className="flex items-center gap-2 w-full">
                       <div className="w-2 h-2 bg-primary rounded-full"></div>
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground">{group.description}</p>
-                      </div>
+                      <p className="font-medium text-foreground">{group.description}</p>
                     </div>
                   </CommandItem>
                 ))}
@@ -100,10 +98,11 @@ export default function GroupSelector({
           </Command>
         </PopoverContent>
       </Popover>
+
       <Button
         variant="default"
         size="sm"
-        onClick={onRefresh}
+        onClick={onReload}
         disabled={loading}
         className="bg-white hover:bg-primary/90 text-primary-foreground transition-smooth"
       >

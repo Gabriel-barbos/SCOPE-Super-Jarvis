@@ -160,7 +160,7 @@ export default function VeiculosDeletar() {
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--gradient-primary)" }}>
             <FolderPlus className="w-4 h-4 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground">Retirar do Grupo</h1>
+          <h1 className="text-3xl font-bold text-foreground">Remover do Grupo</h1>
         </div>
       </div>
 

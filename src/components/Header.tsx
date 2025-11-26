@@ -8,7 +8,7 @@ import { useAuth } from "@/services/AuthService";
 import clientesData from "@/lib/credentials.json";
 
 export function Header() {
-  const { clienteAtivo, selecionarCliente, limparCliente } = useAuth();
+  const { clienteAtivo, selecionarCliente } = useAuth();
   const [statusCliente, setStatusCliente] = useState<"idle" | "loading" | "success" | "error">("idle");
 
   // Modal de novo cliente
@@ -22,25 +22,29 @@ export function Header() {
   const [search, setSearch] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
-  // Atualiza o campo de busca quando o cliente ativo muda
+  //Seleciona automaticamente o primeiro cliente ao carregar
+  useEffect(() => {
+    if (!clienteAtivo && clientes.length > 0) {
+      handleSelecionarCliente(clientes[0]);
+    }
+  }, [clientes, clienteAtivo]);
+
+  // Atualiza o campo de busca sempre que o cliente ativo mudar
   useEffect(() => {
     if (clienteAtivo && !isSearchFocused) {
       setSearch(clienteAtivo.name);
-    } else if (!clienteAtivo && !isSearchFocused) {
-      setSearch(""); // Nenhum cliente selecionado inicialmente
-      setStatusCliente("idle");
     }
   }, [clienteAtivo, isSearchFocused]);
 
   const clientesFiltrados = clientes.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) &&
-    (!clienteAtivo || c.id !== clienteAtivo.id) // Não mostra o cliente já selecionado na lista
+    (!clienteAtivo || c.id !== clienteAtivo.id)
   );
 
   const handleAdicionarCliente = async () => {
     const id = Date.now();
     const cliente = { id, ...novoCliente };
-    setClientes((prev) => [...prev, cliente]);
+    setClientes(prev => [...prev, cliente]);
     setNovoCliente({ name: "", username: "", password: "" });
     setOpenNovoCliente(false);
 
@@ -63,7 +67,7 @@ export function Header() {
 
   const handleSearchFocus = () => {
     setIsSearchFocused(true);
-    setSearch(""); // Limpa o campo quando focado
+    setSearch("");
   };
 
   const handleSearchBlur = () => {
@@ -71,16 +75,15 @@ export function Header() {
       setIsSearchFocused(false);
       if (clienteAtivo) {
         setSearch(clienteAtivo.name);
-      } else {
-        setSearch(""); // Continua vazio se nenhum cliente selecionado
       }
     }, 200);
   };
 
+  // ➤ Agora limpar cliente significa voltar para o primeiro da lista
   const handleLimparCliente = () => {
-    limparCliente();
-    setSearch("");
-    setStatusCliente("idle");
+    if (clientes.length > 0) {
+      handleSelecionarCliente(clientes[0]);
+    }
   };
 
   return (
@@ -117,6 +120,7 @@ export function Header() {
                 placeholder:text-muted-foreground
               `}
             />
+
             {isSearchFocused && search && (
               <ul className="absolute z-10 mt-1 w-64 max-h-60 overflow-auto rounded-md border bg-popover shadow-lg">
                 {clientesFiltrados.map(cliente => (
@@ -156,19 +160,11 @@ export function Header() {
                 <span className="text-red-500 text-xs">Erro no token</span>
               </div>
             )}
-            {statusCliente === "idle" && !clienteAtivo && (
-              <div className="flex items-center gap-1">
-                <Building2 className="w-4 h-4 text-gray-500" />
-                <span className="text-gray-500 text-xs">Nenhum cliente selecionado</span>
-              </div>
-            )}
           </div>
         </div>
       </div>
 
       <div className="flex items-center gap-2">
-
-
         <Button
           variant="ghost"
           size="icon"
@@ -185,6 +181,7 @@ export function Header() {
           <DialogHeader>
             <DialogTitle>Adicionar Novo Cliente</DialogTitle>
           </DialogHeader>
+
           <div className="space-y-4 mt-2">
             <Input
               placeholder="Nome do Cliente"
@@ -203,6 +200,7 @@ export function Header() {
               onChange={(e) => setNovoCliente({ ...novoCliente, password: e.target.value })}
             />
           </div>
+
           <DialogFooter>
             <Button
               onClick={handleAdicionarCliente}

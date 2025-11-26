@@ -39,8 +39,44 @@ function CustomReportCard() {
     const [showModal, setShowModal] = useState(false);
     const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
 
+    const handleGerarRelatorioPersonalizado = async () => {
+        if (selectedColumns.length === 0) {
+            setResult({
+                success: false,
+                message: "Selecione pelo menos um campo para gerar o relatório",
+                total: 0,
+            });
+            setShowModal(true);
+            return;
+        }
+
+        setLoading(true);
+        setResult(null);
+        setShowModal(false);
+        setProgress({ current: 0, total: 0, status: "Iniciando análise..." });
+
+        try {
+            //Chamando  função do relatório personalizado passando as colunas selecionadas
+            const resultado = await vehicleExportService.gerarRelatorioPersonalizado(
+                selectedColumns, // Passa o array de strings do ToggleGroup
+                (current, total, status) => setProgress({ current, total, status })
+            );
+
+            setResult(resultado);
+        } catch (error: any) {
+            setResult({
+                success: false,
+                message: error.message || "Erro inesperado durante a exportação.",
+                total: 0,
+            });
+        } finally {
+            setLoading(false);
+            setShowModal(true);
+        }
+    };
+
+    //Mantém a função original para relatório padrão
     const handleGerarRelatorio = async () => {
-        // Reset estados
         setLoading(true);
         setResult(null);
         setShowModal(false);
@@ -48,8 +84,7 @@ function CustomReportCard() {
 
         try {
             const resultado = await vehicleExportService.exportarVeiculos(
-                (current, total, status) => setProgress({ current, total, status }),
-                
+                (current, total, status) => setProgress({ current, total, status })
             );
 
             setResult(resultado);
@@ -83,7 +118,7 @@ function CustomReportCard() {
                     </div>
 
                     <div className="flex-1">
-                        <h2 className="text-xl font-semibold">Lista de veículos personalizada <Badge className="ml-2 bg-orange-100 text-orange-800 font-medium px-2 py-1 rounded-lg text-sm">Em desenvolvimento</Badge> <Badge className="ml-2 bg-red-300 text-orange-900 font-medium px-2 py-1 rounded-lg text-sm">Não usar</Badge></h2>
+                        <h2 className="text-xl font-semibold">Lista de veículos personalizada <Badge className="ml-2 bg-orange-100 text-orange-800 font-medium px-2 py-1 rounded-lg text-sm">Em desenvolvimento</Badge> </h2>
                         <p className="text-sm text-muted-foreground">
                             Extraia uma lista de veículos com os campos desejados.
                         </p>
@@ -110,7 +145,7 @@ function CustomReportCard() {
                     <div className="flex-shrink-0">
                         <Button
                             variant="default"
-                            onClick={handleGerarRelatorio}
+                            onClick={handleGerarRelatorioPersonalizado}
                             disabled={loading}
                             className="gap-2 bg-white"
                         >
@@ -183,6 +218,13 @@ function CustomReportCard() {
                         >
                             <Gauge />
                             Odômetro
+                        </ToggleGroupItem>
+
+                        
+                        <ToggleGroupItem value="utcStartDate" aria-label="StartDate" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        >
+                            <Gauge />
+                            Startdate
                         </ToggleGroupItem>
                     </ToggleGroup>
                 </div>
