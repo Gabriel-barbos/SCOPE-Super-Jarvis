@@ -11,7 +11,8 @@ import {
     CarFront,
     MapPin,
     Calendar,
-    Gauge
+    Gauge,
+    CalendarCheck
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -118,7 +119,7 @@ function CustomReportCard() {
                     </div>
 
                     <div className="flex-1">
-                        <h2 className="text-xl font-semibold">Lista de veículos personalizada <Badge className="ml-2 bg-orange-100 text-orange-800 font-medium px-2 py-1 rounded-lg text-sm">Em desenvolvimento</Badge> </h2>
+                        <h2 className="text-xl font-semibold">Lista de veículos personalizada <Badge className="ml-2 bg-purple-100 text-purple-800 font-medium px-2 py-1 rounded-lg text-sm">Em teste</Badge> </h2>
                         <p className="text-sm text-muted-foreground">
                             Extraia uma lista de veículos com os campos desejados.
                         </p>
@@ -202,11 +203,11 @@ function CustomReportCard() {
                             Placa
                         </ToggleGroupItem>
 
-                        <ToggleGroupItem value="lastLocation" aria-label="Última localização" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        {/* <ToggleGroupItem value="lastLocation" aria-label="Última localização" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         >
                             <MapPin />
                             Últ. localização
-                        </ToggleGroupItem>
+                        </ToggleGroupItem> */}
 
                         <ToggleGroupItem value="lastKnownEventUtcTimestamp" aria-label="Última atualização" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         >
@@ -223,7 +224,7 @@ function CustomReportCard() {
                         
                         <ToggleGroupItem value="utcStartDate" aria-label="StartDate" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         >
-                            <Gauge />
+                           <CalendarCheck />
                             Startdate
                         </ToggleGroupItem>
                     </ToggleGroup>
