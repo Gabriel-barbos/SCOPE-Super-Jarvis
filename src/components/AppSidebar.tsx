@@ -1,4 +1,4 @@
-import { Car, Brain,CalendarClock,FolderPlus ,FolderMinus, UserCheck, Home, ChevronDown, RefreshCw, UserPlus, UserMinus, Share2, Trash2 } from "lucide-react"
+import { Car, Brain,CalendarClock,FolderPlus ,FolderMinus, OctagonX ,UserCheck, Home, ChevronDown, RefreshCw, UserPlus, UserMinus, Share2, Trash2 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 import { useState } from "react"
 
@@ -44,6 +44,11 @@ const items = [
     title: "Rotinas", 
     url: "/rotinas", 
     icon: CalendarClock 
+  },
+     { 
+    title: "Remoção", 
+    url: "/remocao", 
+    icon: OctagonX  
   },
 ]
 

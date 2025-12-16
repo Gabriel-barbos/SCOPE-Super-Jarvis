@@ -1,4 +1,3 @@
-// components/share/VeiculosShare.tsx
 
 import { useEffect, useState } from "react";
 import { Share2, Loader2 } from "lucide-react";
@@ -120,8 +119,7 @@ export default function VeiculosShare() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center"
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center"
           style={{ background: "var(--gradient-primary)" }}
         >
           <Share2 className="w-4 h-4 text-white" />

@@ -1,4 +1,3 @@
-// components/share/ResultModal.tsx
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CheckCircle, XCircle } from "lucide-react";
 
@@ -36,13 +35,13 @@ export default function ResultModal({
             {success ? "Compartilhamento Concluído!" : "Erro no Compartilhamento"}
           </DialogTitle>
 
-          <DialogDescription>
+          <DialogDescription asChild>
             {success ? (
               <div className="space-y-2">
-                <p>
+                <div>
                   Os veículos foram processados com o grupo{" "}
                   <strong>{groupName}</strong>.
-                </p>
+                </div>
 
                 <div className="text-green-600">
                   ✅ {progress.success}/{progress.total} veículos compartilhados com sucesso
@@ -50,27 +49,27 @@ export default function ResultModal({
 
                 {progress.errors.length > 0 && (
                   <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded">
-                    <p className="font-medium mb-2 text-red-600 dark:text-red-400">
+                    <div className="font-medium mb-2 text-red-600 dark:text-red-400">
                       ❌ Erros encontrados ({progress.errors.length}):
-                    </p>
+                    </div>
 
                     <div className="max-h-32 overflow-y-auto space-y-1">
                       {progress.errors.map((error, index) => (
-                        <p key={index} className="text-xs text-red-600 dark:text-red-400">
+                        <div key={index} className="text-xs text-red-600 dark:text-red-400">
                           • {error}
-                        </p>
+                        </div>
                       ))}
                     </div>
                   </div>
                 )}
               </div>
             ) : (
-              <p>
+              <div>
                 Ocorreu um erro durante o compartilhamento.{" "}
                 <span className="text-red-600">
                   {progress.success}/{progress.total} veículos processados
                 </span>
-              </p>
+              </div>
             )}
           </DialogDescription>
         </DialogHeader>
