@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { UserCheck, Users, Eye, CheckCircle, XCircle } from "lucide-react";
-import { ExcelButtons } from "@/components/ExcelButtons";
+import { ExcelButtons } from "@/components/global/ExcelButtons";
 import InsertManyTable from "@/components/InsertManyTable";
-import { ImportExcelModal } from "@/components/ImportModal";
+import { ImportExcelModal } from "@/components/global/ImportModal";
 import DriverService from "@/services/DriverService";
 import loading from "../assets/loadingDriver.gif"
 
@@ -59,7 +59,7 @@ export default function Motoristas() {
         }
       );
       
-      // Sucesso - todos os motoristas foram cadastrados
+      // Sucesso
       setExecutionStatus('success');
     } catch (error: any) {
       console.error("Erro ao cadastrar motoristas:", error);

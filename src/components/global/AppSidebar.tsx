@@ -1,4 +1,4 @@
-import { Car, Brain,CalendarClock,FolderPlus ,FolderMinus, OctagonX ,UserCheck, Home, ChevronDown, RefreshCw, UserPlus, UserMinus, Share2, Trash2 } from "lucide-react"
+import { Car, Brain,CalendarClock,FolderPlus ,IdCard,FolderMinus, OctagonX ,UserCheck, Home, ChevronDown, RefreshCw, UserPlus, UserMinus, Share2, Trash2 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 import { useState } from "react"
 
@@ -31,23 +31,23 @@ const items = [
     icon: Home 
   },
   { 
-    title: "Usuários", 
-    url: "/usuarios", 
-    icon: UserPlus 
+    title: "Acessos", 
+    url: "/users", 
+    icon: IdCard  
   },
   { 
     title: "Motoristas", 
-    url: "/motoristas", 
+    url: "/drivers", 
     icon: UserCheck 
   },
     { 
     title: "Rotinas", 
-    url: "/rotinas", 
+    url: "/routines", 
     icon: CalendarClock 
   },
      { 
     title: "Remoção", 
-    url: "/remocao", 
+    url: "/deinstallation", 
     icon: OctagonX  
   },
 ]
@@ -55,27 +55,27 @@ const items = [
 const vehicleSubItems = [
   {
     title: "Atualizar carros",
-    url: "/veiculos/atualizar",
+    url: "/vehicles/update",
     icon: RefreshCw
   },
   {
     title: "Adicionar ao grupo",
-    url: "/veiculos/registrar",
+    url: "/vehicles/register",
     icon: FolderPlus
   },
   {
     title: "Remover do grupo",
-    url: "/veiculos/remover",
+    url: "/vehicles/remove",
     icon: FolderMinus 
   },
   {
     title: "Share de veículos",
-    url: "/veiculos/share",
+    url: "/vehicles/share",
     icon: Share2
   },
   {
     title: "Deletar veículos",
-    url: "/veiculos/deletar",
+    url: "/vehicles/delete",
     icon: Trash2
   },
 ]

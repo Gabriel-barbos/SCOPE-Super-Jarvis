@@ -1,5 +1,5 @@
 import { SidebarProvider } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/components/AppSidebar"
+import { AppSidebar } from "@/components/global/AppSidebar"
 import { Header } from "@/components/Header"
 
 interface LayoutProps {

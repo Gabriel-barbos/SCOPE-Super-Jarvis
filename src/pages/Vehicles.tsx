@@ -1,5 +1,5 @@
 import { Car } from "lucide-react"
-import { ExcelButtons } from "@/components/ExcelButtons"
+import { ExcelButtons } from "@/components/global/ExcelButtons"
 
 export default function Veiculos() {
   return (

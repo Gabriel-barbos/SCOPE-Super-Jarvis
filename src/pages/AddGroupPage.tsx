@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import vehicleService, { type VehicleGroup, type OperationResult, type SearchType } from "@/services/VehicleGroupService";
-import ConfirmDialog from "@/components/ConfirmDialog";
+import ConfirmDialog from "@/components/global/ConfirmDialog";
 import OperationReport from "@/components/OperationReport";
-import GroupSelector from "@/components/GroupSelector";
+import GroupSelector from "@/components/global/GroupSelector";
 import VehicleInput from "@/components/VehicleInput";
 
 interface ProcessState {
