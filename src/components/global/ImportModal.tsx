@@ -3,6 +3,7 @@ import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Upload, FileSpreadsheet, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 type Column = { key: string; label: string; required?: boolean; unique?: boolean }
 
@@ -49,7 +50,8 @@ export function ImportExcelModal({
   const handleProcess = async () => {
     if (!file) return
     if (!columns || columns.length === 0) {
-      console.warn("")
+      console.warn("Nenhuma coluna definida para importação")
+      return
     }
 
     try {
@@ -59,43 +61,65 @@ export function ImportExcelModal({
       const sheetName = workbook.SheetNames[0]
       const sheet = workbook.Sheets[sheetName]
 
-      const rows: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" })
-
-      const headerRow = XLSX.utils.sheet_to_json(sheet, { header: 1 })[0] as any[] | undefined
-      const normalizedHeaderMap: Record<string, string> = {}
-      if (Array.isArray(headerRow)) {
-        headerRow.forEach((h) => {
-          normalizedHeaderMap[normalize(h)] = h
-        })
+      // Ler com header pegar colunas
+      const rawData: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" })
+      
+      if (rawData.length < 2) {
+        alert("A planilha deve conter pelo menos um cabeçalho e uma linha de dados.")
+        setLoading(false)
+        return
       }
 
-      const aligned = rows.map((row) => {
-        const out: any = {}
+      const headers = rawData[0] as string[]
+      const dataRows = rawData.slice(1)
+
+      // Criar mapeamento de headers do Excel para keys esperadas
+      const headerMap: Record<string, string> = {}
+      
+      headers.forEach((header, index) => {
+        const normalizedHeader = normalize(header)
+        
+        // Tentar mapear para cada coluna definida
         columns.forEach((col) => {
-          const byKey = row[col.key]
-          const byLabel = row[col.label]
-          const nKey = normalize(col.key)
-          const nLabel = normalize(col.label)
-
-          let fromNormalized: any = ""
-          if (!byKey && !byLabel && headerRow) {
-            const matchKey = normalizedHeaderMap[nKey]
-            const matchLabel = normalizedHeaderMap[nLabel]
-            if (matchKey && row.hasOwnProperty(matchKey)) fromNormalized = row[matchKey]
-            else if (matchLabel && row.hasOwnProperty(matchLabel)) fromNormalized = row[matchLabel]
+          const normalizedKey = normalize(col.key)
+          const normalizedLabel = normalize(col.label)
+          
+          if (normalizedHeader === normalizedKey || normalizedHeader === normalizedLabel) {
+            headerMap[index] = col.key
           }
-
-          out[col.key] = (byKey ?? byLabel ?? fromNormalized ?? "").toString().trim()
         })
-        return out
       })
+
+      // Converter linhas de dados para objetos
+      const aligned = dataRows
+        .filter(row => row.some(cell => cell !== "")) // Remover linhas vazias
+        .map((row) => {
+          const obj: any = {}
+          
+          // Preencher usando o mapeamento de headers
+          Object.entries(headerMap).forEach(([colIndex, key]) => {
+            const value = row[parseInt(colIndex)]
+            obj[key] = value ? String(value).trim() : ""
+          })
+          
+          return obj
+        })
+
+      console.log("Dados importados:", aligned)
+      console.log("Mapeamento de headers:", headerMap)
+
+      if (aligned.length === 0) {
+        alert("Nenhum dado válido encontrado na planilha.")
+        setLoading(false)
+        return
+      }
 
       onImport(aligned)
       setFile(null)
       onClose()
     } catch (err) {
-      console.error("Erro ao processar Excel:", err)
-      alert("Não consegui ler o arquivo. Verifique o formato e o cabeçalho da planilha.")
+      toast.error("Erro ao processar Excel:", err)
+      toast.error("Não consegui ler o arquivo. Verifique o formato e o cabeçalho da planilha.")
     } finally {
       setLoading(false)
     }
@@ -148,7 +172,7 @@ export function ImportExcelModal({
                   Clique ou arraste seu arquivo
                 </p>
                 <p className="text-xs text-gray-500">
-                  Formatos: .xlsx
+                  Formatos: .xlsx, .xls, .csv
                 </p>
               </div>
             )}
@@ -157,9 +181,20 @@ export function ImportExcelModal({
 
         {columns.length > 0 && (
           <div className="text-center animate-in slide-in-from-bottom-2 duration-500">
-            <p className="text-xs text-gray-500">
-              Use o template correto :)
+            <p className="text-xs text-gray-500 mb-2">
+              Colunas esperadas no template:
             </p>
+            <div className="flex flex-wrap gap-1 justify-center">
+              {columns.map((col) => (
+                <span
+                  key={col.key}
+                  className="text-xs bg-black-100 px-2 py-1 rounded"
+                >
+                  {col.label}
+                  {col.required && <span className="text-red-500 ml-1">*</span>}
+                </span>
+              ))}
+            </div>
           </div>
         )}
 

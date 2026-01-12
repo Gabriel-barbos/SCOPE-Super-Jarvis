@@ -7,8 +7,7 @@ import { Progress } from "@/components/ui/progress";
 
 import SelectGroup from "../components/share/SelectGroup";
 import ConfirmModal from "../components/share/ConfirmModal";
-import ResultModal from "../components/share/ResultModal";
-
+import ResultDialog from "../components/share/ResultModal";
 import ShareService from "@/services/ShareService";
 
 interface UserGroup {
@@ -234,14 +233,19 @@ export default function VeiculosShare() {
         onCancel={() => setShowConfirmModal(false)}
       />
 
-      <ResultModal
-        open={showResultModal}
-        success={resultSuccess}
-        groupName={selectedGroup?.description || ""}
-        progress={progress}
-        onClose={() => setShowResultModal(false)}
-        onReset={resetForm}
-      />
+        <ResultDialog
+                      open={showResultModal}
+                      status={progress.errors.length > 0 ? "partial" : "success"}
+                      title="Processamento concluído"
+                      description={`Grupo: ${selectedGroup?.description}`}
+                      summary={{
+                          success: progress.success,
+                          total: progress.total,
+                      }}
+                      errors={progress.errors}
+                      onClose={() => setShowResultModal(false)}
+                      onReset={resetForm}
+                  />
     </div>
   );
 }

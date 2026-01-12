@@ -1,4 +1,4 @@
-import { Car, Brain,CalendarClock,FolderPlus ,IdCard,FolderMinus, OctagonX ,UserCheck, Home, ChevronDown, RefreshCw, UserPlus, UserMinus, Share2, Trash2 } from "lucide-react"
+import { Car, Brain,CalendarClock,FolderPlus ,IdCard,FolderMinus, OctagonX ,UserCheck, Home, ChevronDown, ClipboardPen, UserPlus, UserMinus, Share2, Trash2 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 import { useState } from "react"
 
@@ -54,9 +54,9 @@ const items = [
 
 const vehicleSubItems = [
   {
-    title: "Atualizar carros",
+    title: "Setup de veículos",
     url: "/vehicles/update",
-    icon: RefreshCw
+    icon: ClipboardPen
   },
   {
     title: "Adicionar ao grupo",

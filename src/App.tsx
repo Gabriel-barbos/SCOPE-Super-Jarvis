@@ -25,7 +25,7 @@ const App = () => (
     <TooltipProvider>
       <AuthProvider> 
         <div className="dark">
-          <Toaster />
+          <Toaster  />
           <Sonner />
           <BrowserRouter>
             <Routes>
@@ -42,6 +42,7 @@ const App = () => (
               <Route path="/deinstallation" element={<Layout><Remocao /></Layout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <Toaster/>
           </BrowserRouter>
         </div>
       </AuthProvider>

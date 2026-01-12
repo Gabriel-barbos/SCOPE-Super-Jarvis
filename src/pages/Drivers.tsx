@@ -17,6 +17,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/sonner";
 
 export default function Motoristas() {
   const [openImport, setOpenImport] = useState(false);
@@ -71,8 +72,26 @@ export default function Motoristas() {
     }
   };
 
-  const handleDownloadTemplate = () => {
-    alert("Aqui você pode gerar e baixar o modelo de motoristas...");
+  async function handleDownloadTemplate() {
+     try {
+      const response = await fetch('/templates/Drivers_template.xlsx');
+      if (!response.ok) {
+        throw new Error('Template não encontrado');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'Setup_Veiculos.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erro ao baixar template:', error);
+      toast.error('Erro ao baixar o template. Tente novamente mais tarde :(');
+    }
   };
 
   const handleCloseDialog = () => {
