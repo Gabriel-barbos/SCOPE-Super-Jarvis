@@ -1,5 +1,6 @@
 import React, { useState,useEffect, useRef, useCallback } from 'react';
 import { Plus, Trash2,  Check, X, AlertCircle,SendHorizontal } from "lucide-react";
+import { toast } from 'sonner';
 
 const InsertManyTable = ({ 
   columns, 
@@ -114,11 +115,11 @@ const InsertManyTable = ({
   const handleSubmit = async () => {
     const validData = data.filter(isRowValid);
     if (validData.length === 0) {
-      alert('Nenhum registro válido para envio. Preencha todos os campos obrigatórios.');
+      toast.error('Nenhum registro válido para envio. Preencha todos os campos obrigatórios.');
       return;
     }
     if (hasDuplicates()) {
-      alert('Existem valores duplicados em campos únicos. Corrija antes de prosseguir.');
+      toast.error('Existem valores duplicados em campos únicos. Corrija antes de prosseguir.');
       return;
     }
     const cleanData = validData.map(row => {

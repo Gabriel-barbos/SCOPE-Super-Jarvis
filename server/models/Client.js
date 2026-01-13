@@ -20,7 +20,7 @@ const ClientSchema = new mongoose.Schema(
     type: {
       type: String,
       required: true,
-      enum: ["admin", "user", "client"], // ajuste se quiser
+     
     },
   },
   {

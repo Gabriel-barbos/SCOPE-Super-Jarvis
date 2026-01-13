@@ -3,9 +3,8 @@ import Client from "../models/Client.js";
 
 const router = express.Router();
 
-/**
- * CREATE - criar cliente
- */
+//criar client
+
 router.post("/", async (req, res) => {
   try {
     const { name, login, password, type } = req.body;
@@ -32,21 +31,17 @@ router.post("/", async (req, res) => {
   }
 });
 
-/**
- * READ - listar todos
- */
+//list clients
 router.get("/", async (req, res) => {
   try {
-    const clients = await Client.find().select("-password");
+    const clients = await Client.find();
     res.json(clients);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-/**
- * READ - buscar por ID
- */
+//get client by id
 router.get("/:id", async (req, res) => {
   try {
     const client = await Client.findById(req.params.id).select("-password");
@@ -61,9 +56,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-/**
- * UPDATE - atualizar cliente
- */
+//update client
 router.put("/:id", async (req, res) => {
   try {
     const { name, login, password, type } = req.body;
@@ -84,9 +77,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-/**
- * DELETE - remover cliente
- */
+;//delete client
 router.delete("/:id", async (req, res) => {
   try {
     const client = await Client.findByIdAndDelete(req.params.id);

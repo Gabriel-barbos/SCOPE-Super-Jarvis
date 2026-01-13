@@ -1,7 +1,7 @@
 import { Car, Brain,CalendarClock,FolderPlus ,IdCard,FolderMinus, OctagonX ,UserCheck, Home, ChevronDown, ClipboardPen, UserPlus, UserMinus, Share2, Trash2 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 import { useState } from "react"
-
+import { LogoutButton } from "./LogoutButton"
 import {
   Sidebar,
   SidebarContent,
@@ -190,6 +190,7 @@ export function AppSidebar() {
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
+          <LogoutButton  />
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>

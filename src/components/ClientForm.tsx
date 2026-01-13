@@ -14,98 +14,110 @@ import {
 } from "@/components/ui/select";
 import { User, Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { useClients } from "@/hooks/useClients";
+
 
 // Schema dinâmico baseado no modo (criar ou editar)
+
 const createFormSchema = (isEditing: boolean) =>
   z.object({
     name: z.string().min(2, "Nome muito curto"),
-    email: z.string().email("Email inválido"),
+    login: z.string().min(2,"login muito curto"),
     password: isEditing
       ? z.string().optional()
       : z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
-    role: z.enum(["administrator", "logistics", "support", "scheduling"]),
+    type: z.enum(["Cliente", "Sub-Cliente", "Piloto", "Outro"]),
   });
+
 
 export type UserFormValues = z.infer<ReturnType<typeof createFormSchema>>;
 
 type Props = {
-  userId?: string;
+  clientId?: string;
   onSuccess: () => void;
   onCancel: () => void;
 };
 
-export function ClientForm({ userId, onSuccess, onCancel }: Props) {
+export function ClientForm({ clientId, onSuccess, onCancel }: Props) {
   const [loading, setLoading] = useState(false);
-  const isEditing = Boolean(userId);
+  const isEditing = Boolean(clientId);
 
   const {
-    register,
-    control,
-    reset,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<UserFormValues>({
-    resolver: zodResolver(createFormSchema(isEditing)),
-    defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-      role: "support",
-    },
+  createClient,
+  updateClient,
+  getById,
+} = useClients();
+
+const {
+  data: client,
+  isLoading: isLoadingClient,
+} = getById(clientId);
+
+const {
+  register,
+  control,
+  reset,
+  handleSubmit,
+  formState: { errors },
+} = useForm<UserFormValues>({
+  resolver: zodResolver(createFormSchema(isEditing)),
+  defaultValues: {
+    name: "",
+    login: "",
+    password: "",
+    type: "Cliente",
+  },
+});
+
+
+  // Carrega dados se for editar
+useEffect(() => {
+  if (!client) return;
+
+  reset({
+    name: client.name,
+    login: client.login, // backend usa login
+    type: client.type as UserFormValues["type"],
+    password: "",
   });
+}, [client, reset]);
 
-//   // Carrega dados se for editar
-//   useEffect(() => {
-//     if (!userId) return;
 
-//     (async () => {
-//       try {
-//         const user = await UserService.getById(userId);
-        
-//         reset({
-//           name: user.name,
-//           email: user.email,
-//           role: user.role as any,
-//           password: "",
-//         });
-//       } catch (err) {
-//         console.error("Erro ao carregar usuário:", err);
-//       }
-//     })();
-//   }, [userId, reset]);
+async function onSubmit(data: UserFormValues) {
+  try {
+    setLoading(true);
 
-//   async function onSubmit(data: UserFormValues) {
-//     try {
-//       setLoading(true);
+    if (isEditing && clientId) {
+      await updateClient({
+        id: clientId,
+        data: {
+          name: data.name,
+          login: data.login,
+          type: data.type,
+          ...(data.password ? { password: data.password } : {}),
+        },
+      });
 
-//       if (isEditing) {
-//         await UserService.update(userId!, {
-//           name: data.name,
-//           email: data.email,
-//           role: data.role,
-//           // só envia senha se digitada
-//           ...(data.password ? { password: data.password } : {}),
-//         });
-//         toast.success("Usuário atualizado com sucesso!");
-//       } else {
-//         await UserService.create({
-//           name: data.name,
-//           email: data.email,
-//           password: data.password || "",
-//           role: data.role,
-//         });
-//         toast.success("Usuário criado com sucesso!");
-//       }
+      toast.success("Usuário atualizado com sucesso!");
+    } else {
+      await createClient({
+        name: data.name,
+        login: data.login,
+        password: data.password!,
+        type: data.type,
+      });
 
-//       onSuccess();
-//     } catch (err: any) {
-//       console.error("Erro ao salvar usuário:", err);
-//       const errorMessage = err?.response?.data?.message || "Erro ao salvar usuário";
-//       toast.error(errorMessage);
-//     } finally {
-//       setLoading(false);
-//     }
-//   }
+      toast.success("Usuário criado com sucesso!");
+    }
+
+    onSuccess();
+  } catch (err: any) {
+    toast.error("Erro ao salvar usuário");
+  } finally {
+    setLoading(false);
+  }
+}
+
 
   return (
     <form  className="space-y-5 p-2">
@@ -122,12 +134,12 @@ export function ClientForm({ userId, onSuccess, onCancel }: Props) {
 
       {/* Email */}
       <div className="space-y-1">
-        <Label>Email</Label>
+        <Label>Login</Label>
         <InputWithIcon
           icon={<Mail className="h-4 w-4" />}
           placeholder="Ex.lmfadmscope"
-          error={errors.email?.message}
-          {...register("email")}
+          error={errors.login?.message}
+          {...register("login")}
         />
       </div>
 
@@ -146,7 +158,7 @@ export function ClientForm({ userId, onSuccess, onCancel }: Props) {
       <div className="space-y-1">
         <Label>Tipo</Label>
         <Controller
-          name="role"
+          name="type"
           control={control}
           render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value}>
@@ -154,16 +166,16 @@ export function ClientForm({ userId, onSuccess, onCancel }: Props) {
                 <SelectValue placeholder="Selecione a função" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="administrator">Cliente</SelectItem>
-                <SelectItem value="logistics">Sub-Cliente</SelectItem>
-                <SelectItem value="support">Piloto</SelectItem>
-                <SelectItem value="scheduling">Outro</SelectItem>
+                <SelectItem value="Cliente">Cliente</SelectItem>
+                <SelectItem value="Sub-Cliente">Sub-Cliente</SelectItem>
+                <SelectItem value="Piloto">Piloto</SelectItem>
+                <SelectItem value="Outro">Outro</SelectItem>
               </SelectContent>
             </Select>
           )}
         />
-        {errors.role && (
-          <p className="text-sm text-red-500">{errors.role.message}</p>
+        {errors.type && (
+          <p className="text-sm text-red-500">{errors.type.message}</p>
         )}
       </div>
 
@@ -173,7 +185,7 @@ export function ClientForm({ userId, onSuccess, onCancel }: Props) {
           Cancelar
         </Button>
 
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading} onClick={handleSubmit(onSubmit)}>
           {loading ? "Salvando..." : isEditing ? "Salvar alterações" : "Criar"}
         </Button>
       </div>

@@ -1,10 +1,22 @@
 import express from "express";
 import fetch from "node-fetch";
-import cors from "cors";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
 
+dotenv.config();
+import cors from "cors";
+import clientRoutes from "./routes/ClientRoutes.js";
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// MongoDB
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB conectado com sucesso"))
+  .catch((err) => console.error("Erro ao conectar ao MongoDB:", err));
+
+app.use("/api/clients", clientRoutes);
 
 
 app.post("/api/get-token", async (req, res) => {

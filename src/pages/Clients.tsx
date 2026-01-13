@@ -3,24 +3,25 @@ import { Button } from "@/components/ui/button";
 import { UniversalDrawer } from "@/components/global/UniversalDrawer";
 import { useEffect, useState } from "react";
 import { ClientForm } from "@/components/ClientForm";
-
-
+import { useClients } from "@/hooks/useClients";
+import { ClientsDataTable } from "@/components/ClientsTable";
 export default function Clients() {
 
-  const [users, setUsers] = useState<any[]>([]);
+  const [clientId, setClientId] = useState<any[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
-  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editingClientId, setEditingClientId] = useState<string | null>(null);
 
+  const { clients, isLoading } = useClients();
   // abrir drawer em modo criar
   function openCreate() {
-    setEditingUserId(null);
+    setEditingClientId(null);
     setIsDrawerOpen(true);
   }
 
   // abrir drawer em modo editar para um usuário específico
-  function openEdit(userId: string) {
-    setEditingUserId(userId);
+  function openEdit(clientId: string) {
+    setEditingClientId(clientId);
     setIsDrawerOpen(true);
   }
 
@@ -42,19 +43,19 @@ export default function Clients() {
           open={isDrawerOpen}
           onOpenChange={(open) => {
             setIsDrawerOpen(open);
-            if (!open) setEditingUserId(null);
+            if (!open) setEditingClientId(null);
           }}
-          title={editingUserId ? "Editar Cliente" : "Cadastrar Cliente"}
-          icon={editingUserId ? <SquarePen /> : <CirclePlus />}
-          styleType={editingUserId ? "edit" : "create"}
+          title={editingClientId ? "Editar Cliente" : "Cadastrar Cliente"}
+          icon={editingClientId ? <SquarePen /> : <CirclePlus />}
+          styleType={editingClientId ? "edit" : "create"}
         >
 
-            <ClientForm userId={editingUserId} onSuccess={() => setIsDrawerOpen(false)} onCancel={() => setIsDrawerOpen(false)} />
+            <ClientForm clientId={editingClientId} onSuccess={() => setIsDrawerOpen(false)} onCancel={() => setIsDrawerOpen(false)} />
         </UniversalDrawer>
 
       </div>
 
-
+            <ClientsDataTable onEdit={openEdit} />
     </div>
   );
 }   

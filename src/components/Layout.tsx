@@ -1,7 +1,7 @@
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/global/AppSidebar"
 import { Header } from "@/components/Header"
-
+import { LogoutButton } from "./global/LogoutButton"
 interface LayoutProps {
   children: React.ReactNode
 }
@@ -11,7 +11,6 @@ export function Layout({ children }: LayoutProps) {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
-        
         <div className="flex-1 flex flex-col">
           <Header />
           

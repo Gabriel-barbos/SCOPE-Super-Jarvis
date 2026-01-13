@@ -115,7 +115,7 @@ export default function VeiculosAtualizar() {
       console.error("Erro no setup:", error);
       setExecutionStatus('error');
       setErrorMessage(error?.message || 'Erro desconhecido ao realizar setup dos veículos');
-      setLog((prev) => [...prev, `❌ Erro ao fazer setup dos veículos: ${error?.message || 'Erro desconhecido'}`]);
+      setLog((prev) => [...prev, ` Erro ao fazer setup dos veículos: ${error?.message || 'Erro desconhecido'}`]);
     } finally {
       setIsSubmitting(false);
     }
