@@ -14,8 +14,8 @@ interface LoginContextType {
 const LoginContext = createContext<LoginContextType | null>(null);
 
 const CREDENTIALS = {
-  email: "admin@sistema.com",
-  password: "admin123",
+  email: "estagio@suporte.com",
+  password: "123456",
 };
 
 const LOGIN_STORAGE_KEY = "system_authenticated";

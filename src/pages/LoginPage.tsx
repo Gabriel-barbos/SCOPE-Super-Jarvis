@@ -83,7 +83,7 @@ const LoginPage = () => {
   lg:text-7xl
   xl:text-8xl
   max-[800px]:text-6xl
-                  bg-gradient-to-r from-blue-400 via-purple-400 via-pink-400 to-cyan-400 
+                  bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 
                   bg-[length:200%_auto] animate-gradient-x
                   bg-clip-text text-transparent
                   drop-shadow-[0_0_25px_rgba(139,92,246,0.5)]
@@ -121,7 +121,7 @@ const LoginPage = () => {
                     </div>
                 </div>
 
-                {/* Estilos de animação inline */}
+           
                 <style>{`
           @keyframes fadeInDown {
             from {

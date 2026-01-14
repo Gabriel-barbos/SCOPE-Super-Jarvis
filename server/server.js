@@ -6,6 +6,8 @@ import dotenv from "dotenv";
 dotenv.config();
 import cors from "cors";
 import clientRoutes from "./routes/ClientRoutes.js";
+import RoutineRoutes from "./routes/RoutineRoutes.js";
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -17,7 +19,7 @@ mongoose
   .catch((err) => console.error("Erro ao conectar ao MongoDB:", err));
 
 app.use("/api/clients", clientRoutes);
-
+app.use("/api/routines", RoutineRoutes);
 
 app.post("/api/get-token", async (req, res) => {
   if (req.method !== "POST") {
