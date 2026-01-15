@@ -28,7 +28,17 @@ const RoutineSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+      clientIdentificator: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
+groupIdentificator: {
+  type: String,
+  trim: true,
+  required: true,
+},
     shareGroup: {
       type: String,
       default: null,
@@ -39,17 +49,5 @@ const RoutineSchema = new mongoose.Schema(
   }
 );
 
-// Garantir consistência
-RoutineSchema.pre("save", function (next) {
-  if (!this.addVehicleToGroup) {
-    this.vehicleGroup = null;
-  }
-
-  if (!this.shareVehicle) {
-    this.shareGroup = null;
-  }
-
-  next();
-});
 
 export default mongoose.model("Routine", RoutineSchema);

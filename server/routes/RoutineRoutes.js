@@ -6,9 +6,11 @@ const router = express.Router();
 //create a new routine
 router.post("/", async (req, res) => {
   try {
+    console.log("📦 Payload recebido:", req.body);
     const routine = await Routine.create(req.body);
     res.status(201).json(routine);
   } catch (error) {
+     console.error("❌ Erro completo:", error);
     res.status(400).json({
       message: "Erro ao criar rotina",
       error: error.message,

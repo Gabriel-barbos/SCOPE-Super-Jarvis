@@ -14,6 +14,9 @@ export interface Routine {
   shareVehicle: boolean;
   shareGroup?: string | null;
 
+  clientIdentificator: string;
+  groupIdentificator: string;
+
   createdAt: string;
   updatedAt: string;
 }
@@ -24,6 +27,10 @@ export interface CreateRoutineDTO {
 
   addVehicleToGroup: boolean;
   vehicleGroup?: string | null;
+
+  clientIdentificator: string;
+  groupIdentificator: string;
+
 
   shareVehicle: boolean;
   shareGroup?: string | null;
