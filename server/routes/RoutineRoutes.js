@@ -22,7 +22,7 @@ router.post("/", async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     const routines = await Routine.find()
-      .populate("client", "name login");
+      .populate("client", "name login password");
 
     res.json(routines);
   } catch (error) {
@@ -37,7 +37,7 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const routine = await Routine.findById(req.params.id)
-      .populate("client", "name login");
+      .populate("client", "name login password");
 
     if (!routine) {
       return res.status(404).json({ message: "Rotina não encontrada" });

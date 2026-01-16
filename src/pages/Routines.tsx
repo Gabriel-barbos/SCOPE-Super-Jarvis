@@ -87,7 +87,7 @@ export default function Rotinas() {
           </div>
         </div>
       </div>
-      <Tabs defaultValue="engine" className="space-y-6">
+      <Tabs defaultValue="engine" className="space-y-6 rounded-sm border border-border bg-card p-4">
         <TabsList className="border-b border-border rounded-none justify-start">
           <TabsTrigger value="engine">Motor de Rotinas</TabsTrigger>
           <TabsTrigger value="routines">Gerenciar Rotinas</TabsTrigger>

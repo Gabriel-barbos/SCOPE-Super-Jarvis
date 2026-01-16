@@ -95,7 +95,6 @@ async function buscarVeiculosRemovidos(): Promise<Vehicle[]> {
 }
 
 //add veiculos ao grupo
-
 async function adicionarVeiculosAoGrupo(
   groupDescription: string,
   identifiers: string[],
@@ -139,7 +138,7 @@ async function adicionarVeiculosAoGrupo(
     }
 
     if (vehicleIds.length === 0) {
-      console.warn("⚠️ Nenhum veículo válido encontrado");
+      console.warn("Nenhum veículo válido encontrado");
       return results;
     }
 
