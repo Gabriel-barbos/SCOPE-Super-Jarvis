@@ -1,29 +1,20 @@
-const fetch = require('node-fetch');
+// server/services/AddVehicle.js
+import fetch from 'node-fetch';
 
-async function addVehiclesToGroup({
-  token,
-  vehicleIdentifiers,
-  vehicleGroupId,
-}) {
+async function addVehiclesToGroup({ token, vehicleIdentifiers, vehicleGroupId }) {
   const results = [];
 
   for (const identifier of vehicleIdentifiers) {
     try {
-      //vin ou descricao
-      const searchRes = await fetch(
-        'http://localhost:3001/proxy',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            path: `/Vehicles?$filter=vin eq '${identifier}'&$select=id,vin`,
-            method: 'GET',
-            token,
-          }),
-        }
-      );
+      const searchRes = await fetch('http://localhost:3001/proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          path: `/Vehicles?$filter=vin eq '${identifier}'&$select=id,vin`,
+          method: 'GET',
+          token,
+        }),
+      });
 
       const searchData = await searchRes.json();
       const vehicle = searchData?.value?.[0];
@@ -37,26 +28,16 @@ async function addVehiclesToGroup({
         continue;
       }
 
-      /**
-       * 2. Adiciona ao grupo
-       */
-      const addRes = await fetch(
-        'http://localhost:3001/proxy',
-        {
+      const addRes = await fetch('http://localhost:3001/proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          path: `/VehicleGroups(${vehicleGroupId})/_.addVehicles`,
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            path: `/VehicleGroups(${vehicleGroupId})/_.addVehicles`,
-            method: 'POST',
-            body: {
-              vehicleIds: [vehicle.id],
-            },
-            token,
-          }),
-        }
-      );
+          body: { vehicleIds: [vehicle.id] },
+          token,
+        }),
+      });
 
       if (![200, 204].includes(addRes.status)) {
         throw new Error(`Status ${addRes.status}`);
@@ -78,4 +59,4 @@ async function addVehiclesToGroup({
   return results;
 }
 
-module.exports = addVehiclesToGroup;
+export default addVehiclesToGroup;

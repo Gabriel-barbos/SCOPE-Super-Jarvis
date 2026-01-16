@@ -10,12 +10,10 @@ class RoutineEngine {
     const columnsConfig = {
       chassi: 'Chassi',
       cliente: 'Cliente',
-      grupo: 'Grupo de veículos',
+      grupo: 'Concessionária/Grupo de veiculos',
     };
 
-    /* =======================
-       1. Lê a planilha
-    ======================= */
+
     const excelRows = ExcelReader.read(filePath, columnsConfig);
 
     if (!excelRows.length) {
@@ -26,9 +24,7 @@ class RoutineEngine {
       };
     }
 
-    /* =======================
-       2. Busca rotinas
-    ======================= */
+
     const routines = await Routine.find().populate('client');
 
     const routineMap = new Map();
@@ -41,9 +37,7 @@ class RoutineEngine {
       routineMap.get(key).push(routine);
     });
 
-    /* =======================
-       3. Matching + erros
-    ======================= */
+  
     const routinesToProcess = new Map();
     const errorReport = [];
 
@@ -73,13 +67,11 @@ class RoutineEngine {
       }
 
       possibleRoutines.forEach((routine) => {
-        if (routine.groupIdentificator?.trim()) {
-          if (!row.grupo) return;
+        const routineGroup = routine.groupIdentificator?.trim().toLowerCase() || null;
+        const excelGroup = row.grupo?.trim().toLowerCase() || null;
 
-          const groupMatch =
-            routine.groupIdentificator.trim().toLowerCase() === row.grupo;
-
-          if (!groupMatch) return;
+        if (routineGroup && routineGroup !== excelGroup) {
+          return;
         }
 
         matched = true;
@@ -91,9 +83,7 @@ class RoutineEngine {
           });
         }
 
-        routinesToProcess
-          .get(routine._id.toString())
-          .vehicles.push(row.chassi);
+        routinesToProcess.get(routine._id.toString()).vehicles.push(row.chassi);
       });
 
       if (!matched) {
@@ -107,9 +97,7 @@ class RoutineEngine {
       }
     });
 
-    /* =======================
-       4. EXECUÇÃO DAS ROTINAS
-    ======================= */
+
     const executionResults = [];
 
     for (const { routine, vehicles } of routinesToProcess.values()) {
@@ -121,13 +109,11 @@ class RoutineEngine {
       };
 
       try {
-        /* 🔐 Token por cliente */
         const token = await getToken({
           login: routine.client.login,
           password: routine.client.password,
         });
 
-        /* ➕ Add to Group */
         if (routine.addVehicleToGroup) {
           routineReport.executedActions.addVehicleToGroup =
             await addVehiclesToGroup({
@@ -137,7 +123,6 @@ class RoutineEngine {
             });
         }
 
-        /* 🔁 Share */
         if (routine.shareVehicle) {
           routineReport.executedActions.shareVehicle =
             await shareVehicles({
@@ -153,9 +138,6 @@ class RoutineEngine {
       executionResults.push(routineReport);
     }
 
-    /* =======================
-       5. RELATÓRIO FINAL
-    ======================= */
     return {
       summary: {
         totalExcelRows: excelRows.length,

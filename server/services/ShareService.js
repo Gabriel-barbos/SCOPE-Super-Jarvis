@@ -1,29 +1,20 @@
-const fetch = require('node-fetch');
+// server/services/ShareService.js
+import fetch from 'node-fetch';
 
-async function shareVehicles({
-  token,
-  vehicleIdentifiers,
-  shareGroupId,
-}) {
+async function shareVehicles({ token, vehicleIdentifiers, shareGroupId }) {
   const results = [];
 
   for (const identifier of vehicleIdentifiers) {
     try {
-      /**
-       * Buscar veículo
-       */
-      const searchRes = await fetch(
-        'http://localhost:3001/proxy',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            path: `/Vehicles?$filter=vin eq '${identifier}'&$select=id,vin`,
-            method: 'GET',
-            token,
-          }),
-        }
-      );
+      const searchRes = await fetch('http://localhost:3001/proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          path: `/Vehicles?$filter=vin eq '${identifier}'&$select=id,vin`,
+          method: 'GET',
+          token,
+        }),
+      });
 
       const searchData = await searchRes.json();
       const vehicle = searchData?.value?.[0];
@@ -37,9 +28,6 @@ async function shareVehicles({
         continue;
       }
 
-      /**
-       * Compartilhar
-       */
       await fetch('http://localhost:3001/proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -71,4 +59,4 @@ async function shareVehicles({
   return results;
 }
 
-module.exports = shareVehicles;
+export default shareVehicles;

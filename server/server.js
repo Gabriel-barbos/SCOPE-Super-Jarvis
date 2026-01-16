@@ -7,6 +7,7 @@ import cors from 'cors';
 import clientRoutes from './routes/ClientRoutes.js';
 import routineRoutes from './routes/RoutineRoutes.js';
 import engineRoutes from './routes/EngineRoutes.js';
+import tokenRoutes from './routes/TokenRoutes.js';
 
 dotenv.config();
 
@@ -14,24 +15,29 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-//Conexão com MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB conectado com sucesso'))
   .catch((err) => console.error('Erro ao conectar MongoDB:', err));
 
-//Rotas
 app.use('/api/clients', clientRoutes);
 app.use('/api/routines', routineRoutes);
 app.use('/api', engineRoutes);
+app.use('/api', tokenRoutes);
 
-// Proxy API externa
 app.post('/proxy', async (req, res) => {
   try {
-    const { path, method = 'GET', body, token } = req.body;
+    const { path, method = 'GET', body } = req.body;
 
     if (!path) {
       return res.status(400).json({ error: 'Path é obrigatório' });
+    }
+
+    // Aceita token do body OU do header Authorization
+    let token = req.body.token || req.headers.authorization;
+
+    if (token && token.toLowerCase().startsWith('bearer ')) {
+      token = token.slice(7);
     }
 
     if (!token) {
@@ -67,7 +73,6 @@ app.post('/proxy', async (req, res) => {
   }
 });
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',

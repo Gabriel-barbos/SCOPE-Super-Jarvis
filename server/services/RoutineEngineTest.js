@@ -9,9 +9,6 @@ class RoutineEngineTest {
       grupo: 'Concessionária/Grupo de veiculos',
     };
 
-    /* =======================
-       1. Lê a planilha
-    ======================= */
     const excelRows = ExcelReader.read(filePath, columnsConfig);
 
     if (!excelRows.length) {
@@ -22,11 +19,7 @@ class RoutineEngineTest {
       };
     }
 
-    /* =======================
-       2. Busca rotinas
-    ======================= */
     const routines = await Routine.find().populate('client');
-
     const routineMap = new Map();
 
     routines.forEach((routine) => {
@@ -37,9 +30,6 @@ class RoutineEngineTest {
       routineMap.get(key).push(routine);
     });
 
-    /* =======================
-       3. Matching + erros
-    ======================= */
     const routinesToProcess = new Map();
     const errorReport = [];
 
@@ -69,13 +59,12 @@ class RoutineEngineTest {
       }
 
       possibleRoutines.forEach((routine) => {
-        if (routine.groupIdentificator?.trim()) {
-          if (!row.grupo) return;
+        const routineGroup = routine.groupIdentificator?.trim().toLowerCase() || null;
+        const excelGroup = row.grupo?.trim().toLowerCase() || null;
 
-          const groupMatch =
-            routine.groupIdentificator.trim().toLowerCase() === row.grupo;
-
-          if (!groupMatch) return;
+        // Se rotina exige grupo específico, deve bater
+        if (routineGroup && routineGroup !== excelGroup) {
+          return;
         }
 
         matched = true;
@@ -87,9 +76,7 @@ class RoutineEngineTest {
           });
         }
 
-        routinesToProcess
-          .get(routine._id.toString())
-          .vehicles.push(row.chassi);
+        routinesToProcess.get(routine._id.toString()).vehicles.push(row.chassi);
       });
 
       if (!matched) {
@@ -103,10 +90,6 @@ class RoutineEngineTest {
       }
     });
 
-    /* =======================
-       4. SIMULAÇÃO DAS ROTINAS
-       (sem token / sem API)
-    ======================= */
     const executionResults = [];
 
     for (const { routine, vehicles } of routinesToProcess.values()) {
@@ -118,7 +101,6 @@ class RoutineEngineTest {
         mode: 'TEST',
       };
 
-      // ➕ Simula Add to Group
       if (routine.addVehicleToGroup) {
         routineReport.executedActions.addVehicleToGroup = {
           simulated: true,
@@ -128,7 +110,6 @@ class RoutineEngineTest {
         };
       }
 
-      // 🔁 Simula Share
       if (routine.shareVehicle) {
         routineReport.executedActions.shareVehicle = {
           simulated: true,
@@ -141,9 +122,6 @@ class RoutineEngineTest {
       executionResults.push(routineReport);
     }
 
-    /* =======================
-       5. RELATÓRIO FINAL
-    ======================= */
     return {
       summary: {
         totalExcelRows: excelRows.length,

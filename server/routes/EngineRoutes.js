@@ -6,9 +6,7 @@ import RoutineEngineTest from '../services/RoutineEngineTest.js';
 
 const router = express.Router();
 
-const upload = multer({
-  dest: 'uploads/',
-});
+const upload = multer({ dest: 'uploads/' });
 
 /* =========================
    TESTE (DRY RUN)
