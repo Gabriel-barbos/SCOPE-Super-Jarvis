@@ -34,7 +34,7 @@ function getToken(): string {
   return token;
 }
 
-// ========== BUSCA ==========
+// Busca grupos de veículos
 
 async function listarGrupos(): Promise<VehicleGroup[]> {
   try {
@@ -94,7 +94,7 @@ async function buscarVeiculosRemovidos(): Promise<Vehicle[]> {
   }
 }
 
-// ========== ADICIONAR ==========
+//add veiculos ao grupo
 
 async function adicionarVeiculosAoGrupo(
   groupDescription: string,
@@ -163,7 +163,7 @@ async function adicionarVeiculosAoGrupo(
       throw new Error(`Falha ao adicionar ao grupo (status ${res.status})`);
     }
 
-    console.log(`✅ ${vehicleIds.length} veículos adicionados ao grupo ${groupDescription}`);
+    console.log(` ${vehicleIds.length} veículos adicionados ao grupo ${groupDescription}`);
     return results;
   } catch (err: any) {
     console.error("❌ Erro ao adicionar veículos ao grupo:", err.response?.data || err.message);
@@ -171,7 +171,7 @@ async function adicionarVeiculosAoGrupo(
   }
 }
 
-// ========== REMOVER DO GRUPO ==========
+//remove veiculos do grupo
 
 async function removerVeiculosDoGrupo(
   groupDescription: string,
@@ -240,10 +240,10 @@ async function removerVeiculosDoGrupo(
       throw new Error(`Falha ao remover do grupo (status ${res.status})`);
     }
 
-    console.log(`✅ ${vehicleIds.length} veículos removidos do grupo ${groupDescription}`);
+    console.log(` ${vehicleIds.length} veículos removidos do grupo ${groupDescription}`);
     return results;
   } catch (err: any) {
-    console.error("❌ Erro ao remover veículos do grupo:", err.response?.data || err.message);
+    console.error(" Erro ao remover veículos do grupo:", err.response?.data || err.message);
     throw err;
   }
 }

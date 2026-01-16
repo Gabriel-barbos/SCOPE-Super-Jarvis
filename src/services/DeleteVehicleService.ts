@@ -39,7 +39,7 @@ async function buscarVeiculosRemovidos(): Promise<VehicleSearchResult[]> {
       vin: vehicle.vin,
     }));
   } catch (err: any) {
-    console.error("❌ Erro ao buscar veículos removidos:", err.response?.data || err.message);
+    console.error(" Erro ao buscar veículos removidos:", err.response?.data || err.message);
     throw err;
   }
 }
@@ -76,7 +76,7 @@ async function buscarVeiculoPorDescricaoOuVin(searchTerm: string): Promise<Vehic
 
     return null;
   } catch (err: any) {
-    console.error(`❌ Erro ao buscar veículo ${searchTerm}:`, err.response?.data || err.message);
+    console.error(` Erro ao buscar veículo ${searchTerm}:`, err.response?.data || err.message);
     throw err;
   }
 }
@@ -97,7 +97,7 @@ async function excluirVeiculoPorId(vehicleId: string): Promise<boolean> {
     );
     return true;
   } catch (err: any) {
-    console.error(`❌ Erro ao excluir veículo ID ${vehicleId}:`, err.response?.data || err.message);
+    console.error(` Erro ao excluir veículo ID ${vehicleId}:`, err.response?.data || err.message);
     return false;
   }
 }
@@ -117,7 +117,7 @@ async function excluirVeiculosEmLote(
 
     for (let j = 0; j < chunk.length; j++) {
       const searchTerm = chunk[j].trim();
-      console.log("🔍 Buscando veículo:", searchTerm);
+      console.log(" Buscando veículo:", searchTerm);
 
       try {
         const vehicle = await buscarVeiculoPorDescricaoOuVin(searchTerm);
@@ -129,9 +129,9 @@ async function excluirVeiculosEmLote(
             error: "Veículo não encontrado",
           };
           results.push(result);
-          console.log("⚠️ Veículo não encontrado:", searchTerm);
+          console.log(" Veículo não encontrado:", searchTerm);
         } else {
-          console.log("✅ Veículo encontrado:", vehicle);
+          console.log(" Veículo encontrado:", vehicle);
 
           const deleted = await excluirVeiculoPorId(vehicle.id);
 
@@ -143,9 +143,9 @@ async function excluirVeiculosEmLote(
           results.push(result);
 
           if (deleted) {
-            console.log("🗑️ Veículo excluído com sucesso:", vehicle.description);
+            console.log(" Veículo excluído com sucesso:", vehicle.description);
           } else {
-            console.log("❌ Falha ao excluir veículo:", vehicle.description);
+            console.log(" Falha ao excluir veículo:", vehicle.description);
           }
         }
       } catch (err: any) {
@@ -155,7 +155,7 @@ async function excluirVeiculosEmLote(
           error: err.response?.data?.message || err.message || "Erro desconhecido",
         };
         results.push(result);
-        console.error(`❌ Erro ao processar ${searchTerm}:`, err.response?.data || err.message);
+        console.error(` Erro ao processar ${searchTerm}:`, err.response?.data || err.message);
       }
 
       processed++;
@@ -174,11 +174,11 @@ async function excluirTodosVeiculosRemovidos(
   lote = 3,
   onProgress?: (processed: number, total: number, vehicleInfo?: string, success?: boolean) => void
 ): Promise<DeleteResult[]> {
-  console.log("🔍 Buscando veículos com 'REMOVIDO' na descrição...");
+  console.log(" Buscando veículos com 'REMOVIDO' na descrição...");
 
   try {
     const veiculosRemovidos = await buscarVeiculosRemovidos();
-    console.log(`📋 Encontrados ${veiculosRemovidos.length} veículos para exclusão`);
+    console.log(` Encontrados ${veiculosRemovidos.length} veículos para exclusão`);
 
     if (veiculosRemovidos.length === 0) {
       return [];
@@ -193,7 +193,7 @@ async function excluirTodosVeiculosRemovidos(
 
       for (let j = 0; j < chunk.length; j++) {
         const vehicle = chunk[j];
-        console.log("🗑️ Excluindo veículo:", vehicle.description);
+        console.log(" Excluindo veículo:", vehicle.description);
 
         try {
           const deleted = await excluirVeiculoPorId(vehicle.id);
@@ -206,9 +206,9 @@ async function excluirTodosVeiculosRemovidos(
           results.push(result);
 
           if (deleted) {
-            console.log("✅ Veículo excluído:", vehicle.description);
+            console.log(" Veículo excluído:", vehicle.description);
           } else {
-            console.log("❌ Falha ao excluir:", vehicle.description);
+            console.log(" Falha ao excluir:", vehicle.description);
           }
         } catch (err: any) {
           const result: DeleteResult = {
@@ -217,7 +217,7 @@ async function excluirTodosVeiculosRemovidos(
             error: err.response?.data?.message || err.message || "Erro desconhecido",
           };
           results.push(result);
-          console.error(`❌ Erro ao excluir ${vehicle.description}:`, err.response?.data || err.message);
+          console.error(` Erro ao excluir ${vehicle.description}:`, err.response?.data || err.message);
         }
 
         processed++;
@@ -230,7 +230,7 @@ async function excluirTodosVeiculosRemovidos(
 
     return results;
   } catch (err: any) {
-    console.error("❌ Erro ao buscar veículos removidos:", err.response?.data || err.message);
+    console.error(" Erro ao buscar veículos removidos:", err.response?.data || err.message);
     throw err;
   }
 }

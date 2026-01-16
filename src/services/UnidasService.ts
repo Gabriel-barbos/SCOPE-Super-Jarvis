@@ -21,7 +21,7 @@ class UnidasService {
    * Gera o token de acesso da Unidas
    */
   async loginUnidas(): Promise<void> {
-    console.log("➡️ Solicitando token da Unidas...");
+    console.log(" Solicitando token da Unidas...");
 
     try {
       const res = await axios.post("http://localhost:3001/api/get-token", {
@@ -32,13 +32,13 @@ class UnidasService {
       this.token = res.data?.access_token;
 
       if (!this.token) {
-        console.error("❌ Token não retornado da API");
+        console.error(" Token não retornado da API");
         throw new Error("Não foi possível obter o token da Unidas");
       }
 
-      console.log("✅ Token recebido com sucesso:", this.token.slice(0, 10) + "...");
+      console.log(" Token recebido com sucesso:", this.token.slice(0, 10) + "...");
     } catch (err: any) {
-      console.error("❌ Erro ao gerar token da Unidas:", err.response?.data || err.message);
+      console.error(" Erro ao gerar token da Unidas:", err.response?.data || err.message);
       throw err;
     }
   }
@@ -51,10 +51,10 @@ class UnidasService {
     onProgress?: (processados: number, total: number, descricao?: string) => void
   ): Promise<Veiculo[]> {
     if (!this.token) {
-      throw new Error("⚠️ Você precisa chamar loginUnidas() antes.");
+      throw new Error(" Você precisa chamar loginUnidas() antes.");
     }
 
-    console.log("➡️ Iniciando busca de veículos usando token da Unidas...");
+    console.log(" Iniciando busca de veículos usando token da Unidas...");
 
     let skip = 0;
     let totalProcessados = 0;
@@ -97,10 +97,10 @@ class UnidasService {
         hasMore = totalProcessados < total;
       }
 
-      console.log("✅ Busca de veículos concluída");
+      console.log(" Busca de veículos concluída");
       return resultado;
     } catch (err: any) {
-      console.error("❌ Erro ao consultar /Vehicles:", err.response?.data || err.message);
+      console.error(" Erro ao consultar /Vehicles:", err.response?.data || err.message);
       throw err;
     }
   }
@@ -111,11 +111,11 @@ class UnidasService {
    */
   async adicionarVeiculosAoGrupoTodos(veiculos: Veiculo[]): Promise<void> {
     if (!this.token) {
-      throw new Error("⚠️ Você precisa chamar loginUnidas() antes.");
+      throw new Error(" Você precisa chamar loginUnidas() antes.");
     }
 
     if (!veiculos || veiculos.length === 0) {
-      console.warn("⚠️ Nenhum veículo para adicionar.");
+      console.warn(" Nenhum veículo para adicionar.");
       return;
     }
 
@@ -123,7 +123,7 @@ class UnidasService {
     const vehicleIds = veiculos.map(v => v.id);
 
     try {
-      console.log(`➡️ Adicionando ${vehicleIds.length} veículos ao grupo "${groupId}"...`);
+      console.log(` Adicionando ${vehicleIds.length} veículos ao grupo "${groupId}"...`);
 
       await this.api.post("/proxy", {
         path: `/VehicleGroups(${groupId})/_.addVehicles`,
@@ -132,9 +132,9 @@ class UnidasService {
         body: { vehicleIds },
       });
 
-      console.log(`✅ Veículos adicionados ao grupo com sucesso!`);
+      console.log(` Veículos adicionados ao grupo com sucesso!`);
     } catch (err: any) {
-      console.error(`❌ Erro ao adicionar veículos ao grupo:`, err.response?.data || err.message);
+      console.error(` Erro ao adicionar veículos ao grupo:`, err.response?.data || err.message);
       throw err;
     }
   }

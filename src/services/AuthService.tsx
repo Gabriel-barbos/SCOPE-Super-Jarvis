@@ -20,8 +20,8 @@ type AuthContextType = {
 
 // Constantes
 const API_URL = "http://localhost:3001/api/get-token";
-const TOKEN_DURATION = 60 * 60 * 1000; // 1 hora em ms
-const REFRESH_BEFORE = 5 * 60 * 1000; // Renovar 5 minutos antes de expirar
+const TOKEN_DURATION = 60 * 60 * 1000; 
+const REFRESH_BEFORE = 5 * 60 * 1000; 
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -58,8 +58,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const data = await res.json();
     const expiresAt = new Date(Date.now() + TOKEN_DURATION);
 
-    console.log("🔑 Token gerado:", data.access_token);
-    console.log("⏰ Expira em:", expiresAt.toLocaleString());
+    console.log("Token gerado:", data.access_token);
+    console.log("Expira em:", expiresAt.toLocaleString());
 
     return {
       token: data.access_token,
@@ -91,15 +91,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const tempoParaRefresh = expiraEm - agora - REFRESH_BEFORE;
 
     if (tempoParaRefresh > 0) {
-      console.log(`🔄 Refresh agendado para: ${new Date(agora + tempoParaRefresh).toLocaleTimeString()}`);
+      console.log(`Refresh agendado para: ${new Date(agora + tempoParaRefresh).toLocaleTimeString()}`);
       
       refreshTimerRef.current = setTimeout(() => {
-        console.log("🔄 Iniciando refresh automático do token...");
+        console.log("Iniciando refresh automático do token...");
         refreshToken();
       }, tempoParaRefresh);
     } else {
       // Token já expirou ou vai expirar muito em breve
-      console.warn("⚠️ Token expirando em breve, renovando imediatamente...");
+      console.warn("Token expirando em breve, renovando imediatamente...");
       refreshToken();
     }
   }, []);
@@ -113,7 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsRefreshing(true);
 
     try {
-      console.log("🔄 Renovando token para:", clienteAtivo.name);
+      console.log("Renovando token para:", clienteAtivo.name);
       
       const { token: novoToken, expiresAt: novaExpiracao } = await gerarToken(clienteAtivo);
       
@@ -124,13 +124,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Agenda o próximo refresh
       agendarRefresh(novaExpiracao);
       
-      console.log("✅ Token renovado com sucesso!");
+      console.log("Token renovado com sucesso!");
     } catch (error) {
-      console.error("❌ Erro ao renovar token:", error);
+      console.error(" Erro ao renovar token:", error);
       
       // Em caso de erro, tenta novamente em 30 segundos
       refreshTimerRef.current = setTimeout(() => {
-        console.log("🔄 Tentando renovar token novamente...");
+        console.log(" Tentando renovar token novamente...");
         refreshToken();
       }, 30000);
     } finally {
@@ -155,14 +155,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(tokenLS);
         setTokenExpiresAt(expiresAt);
         
-        console.log("🔐 Sessão recuperada do localStorage");
-        console.log("👤 Cliente:", cliente.name);
-        console.log("⏰ Token expira em:", expiresAt.toLocaleString());
+        console.log(" Sessão recuperada do localStorage");
+        console.log(" Cliente:", cliente.name);
+        console.log(" Token expira em:", expiresAt.toLocaleString());
         
         // Agenda o refresh
         agendarRefresh(expiresAt);
       } else {
-        console.log("⚠️ Token expirado encontrado no localStorage, limpando...");
+        console.log("Token expirado encontrado no localStorage, limpando...");
         limparCliente();
       }
     }
@@ -189,9 +189,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Agenda o refresh automático
       agendarRefresh(expiresAt);
       
-      console.log("✅ Cliente selecionado:", cliente.name);
+      console.log("Cliente selecionado:", cliente.name);
     } catch (err) {
-      console.error("❌ Erro ao selecionar cliente:", err);
+      console.error(" Erro ao selecionar cliente:", err);
       throw err;
     }
   }, [gerarToken, salvarNoStorage, agendarRefresh]);
@@ -208,7 +208,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(STORAGE_KEYS.TOKEN);
     localStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
     
-    console.log("🚪 Cliente desconectado");
+    console.log("Cliente desconectado");
   }, [limparRefreshTimer]);
 
   return (

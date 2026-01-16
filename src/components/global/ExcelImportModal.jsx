@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Upload, X, FileSpreadsheet, Eye, Database, AlertCircle, CheckCircle2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
-// Simulação dos componentes shadcn/ui (substitua pelos imports reais)
+
 const Dialog = ({ open, onOpenChange, children }) => {
   if (!open) return null;
   return (
@@ -77,7 +77,7 @@ const ExcelImportModal = ({
   const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState('upload'); // 'upload', 'preview', 'success'
+  const [step, setStep] = useState('upload'); 
   const itemsPerPage = 10;
 
   // Resetar estado quando modal fecha
@@ -305,7 +305,7 @@ const ExcelImportModal = ({
                           {columns.map((col) => (
                             <TableCell key={col.key}>
                               <div className={`${!row[col.key] && col.required ? 'text-red-500' : ''}`}>
-                                {row[col.key] || (col.required ? '⚠️ Obrigatório' : '-')}
+                                {row[col.key] || (col.required ? ' Obrigatório' : '-')}
                               </div>
                             </TableCell>
                           ))}

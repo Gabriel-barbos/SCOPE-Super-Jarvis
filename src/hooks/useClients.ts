@@ -72,7 +72,7 @@ export function useClients() {
         const { data } = await api.get<Client>(`/${id}`);
         return data;
       },
-      enabled: !!id, // só executa se tiver id
+      enabled: !!id, 
       staleTime: 1000 * 60 * 5,
     });
 

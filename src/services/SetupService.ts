@@ -56,7 +56,7 @@ async function listarGrupos(): Promise<VehicleGroup[]> {
     );
     return res.data.value || [];
   } catch (err: any) {
-    console.error("❌ Erro ao listar grupos:", err.response?.data || err.message);
+    console.error(" Erro ao listar grupos:", err.response?.data || err.message);
     throw err;
   }
 }
@@ -164,7 +164,7 @@ async function atualizarVeiculo(
     
     return true;
   } catch (err: any) {
-    console.error(`❌ Erro ao atualizar veículo ${vehicleId}:`, err.response?.data || err.message);
+    console.error(` Erro ao atualizar veículo ${vehicleId}:`, err.response?.data || err.message);
     return false;
   }
 }

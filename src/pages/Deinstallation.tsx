@@ -190,8 +190,7 @@ export default function Remocao() {
                         </div>
                     </div>
 
-                    {/* Switch 1: Remover de todos os grupos */}
-                    <div className="flex items-center justify-between">
+                    {/* <div className="flex items-center justify-between">
                         <Label htmlFor="remover-grupos" className="cursor-pointer">
                             Retirar de todos os grupos?
                         </Label>
@@ -201,7 +200,7 @@ export default function Remocao() {
                             onCheckedChange={setRemoverDeGrupos}
                             disabled={processing}
                         />
-                    </div>
+                    </div> */}
 
                     {/* Switch 2: Mover para grupo removidos
           <div className="flex items-center justify-between">
@@ -286,10 +285,6 @@ export default function Remocao() {
                 groupName={selectedGroup?.description || "Mzone"}
                 actionType="remove"
             />
-
-
-          
-
 
             <ResultDialog
                 open={showResultModal}

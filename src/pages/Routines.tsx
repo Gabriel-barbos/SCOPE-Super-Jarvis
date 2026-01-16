@@ -15,6 +15,7 @@ import { UniversalDrawer } from "@/components/global/UniversalDrawer";
 
 import { CirclePlus, ContactRound, IdCard, SquarePen, UserRoundPlus } from "lucide-react";
 import { RoutineForm } from "@/components/RoutineForm";
+import { RoutineList } from "@/components/RoutineList";
 
 interface SpreadsheetData {
   name: string;
@@ -30,6 +31,7 @@ export default function Rotinas() {
   const [isAnimationActive, setIsAnimationActive] = useState(false);
   const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
   // abrir drawer em modo criar
   function openCreate() {
     setEditingRoutineId(null);
@@ -95,7 +97,7 @@ export default function Rotinas() {
 
         <TabsContent value="routines" className="space-y-4">
 
-      
+
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold">Rotinas cadastradas</h2>
@@ -110,27 +112,30 @@ export default function Rotinas() {
             </Button>
           </div>
 
-          {/* Listagem */}
           <UnidasCard />
+          <RoutineList onEdit={openEdit} />
 
         </TabsContent>
 
       </Tabs>
       <UniversalDrawer
-          open={isDrawerOpen}
-          onOpenChange={(open) => {
-            setIsDrawerOpen(open);
-            if (!open) setEditingRoutineId(null);
-          }}
-          title={editingRoutineId ? "Editar Rotina" : "Cadastrar Rotina"}
-          icon={editingRoutineId ? <SquarePen /> : <CirclePlus />}
-          styleType={editingRoutineId ? "edit" : "create"}
-        > 
+        open={isDrawerOpen}
+        onOpenChange={(open) => {
+          setIsDrawerOpen(open);
+          if (!open) setEditingRoutineId(null);
+        }}
+        title={editingRoutineId ? "Editar Rotina" : "Cadastrar Rotina"}
+        icon={editingRoutineId ? <SquarePen /> : <CirclePlus />}
+        styleType={editingRoutineId ? "edit" : "create"}
+      >
         <div className="max-h-[calc(100vh-160px)] overflow-y-auto pr-2">
-
-        <RoutineForm></RoutineForm>
+          <RoutineForm
+            routineId={editingRoutineId}
+            onSuccess={() => setIsDrawerOpen(false)}
+            onCancel={() => setIsDrawerOpen(false)}
+          />
         </div>
-        </UniversalDrawer>
+      </UniversalDrawer>
 
 
     </div>

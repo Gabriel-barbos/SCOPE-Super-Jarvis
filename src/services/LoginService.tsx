@@ -14,7 +14,7 @@ interface LoginContextType {
 const LoginContext = createContext<LoginContextType | null>(null);
 
 const CREDENTIALS = {
-  email: "estagio@suporte.com",
+  email: "3",
   password: "123456",
 };
 

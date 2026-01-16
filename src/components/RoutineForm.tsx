@@ -1,40 +1,76 @@
-    import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { InputWithIcon } from "@/components/global/InputWithIcon";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { User, Tag, Layers, Share2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { ScanSearch, Tag, SearchCheck } from "lucide-react";
 import { useRoutines } from "@/hooks/useRoutines";
 import { useClients } from "@/hooks/useClients";
-
 import SelectGroup from "./share/SelectGroup";
 import GroupSelector from "./global/GroupSelector";
-
 import vehicleService from "@/services/VehicleGroupService";
 import ShareService from "@/services/ShareService";
 
-export function RoutineForm({ onSuccess }: { onSuccess?: () => void }) {
-  const { createRoutine, isCreating } = useRoutines();
+interface RoutineFormProps {
+  routineId?: string | null;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
+export function RoutineForm({ routineId, onSuccess, onCancel }: RoutineFormProps) {
+  const { toast } = useToast();
+  const { createRoutine, updateRoutine, isCreating, isUpdating, routines } = useRoutines();
   const { clients } = useClients();
 
   const [name, setName] = useState("");
   const [client, setClient] = useState("");
   const [clientIdentificator, setClientIdentificator] = useState("");
   const [groupIdentificator, setGroupIdentificator] = useState("");
-
   const [addVehicleToGroup, setAddVehicleToGroup] = useState(false);
   const [shareVehicle, setShareVehicle] = useState(false);
-
   const [vehicleGroups, setVehicleGroups] = useState<any[]>([]);
   const [userGroups, setUserGroups] = useState<any[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(false);
-
   const [selectedVehicleGroup, setSelectedVehicleGroup] = useState<any>(null);
   const [selectedShareGroup, setSelectedShareGroup] = useState<any>(null);
-
   const [openVehicleGroup, setOpenVehicleGroup] = useState(false);
 
-  /** carregar grupos de veículos */
+  // Carregar dados da rotina ao editar
+  useEffect(() => {
+    if (routineId) {
+      const routine = routines.find((r) => r._id === routineId);
+      if (routine) {
+        setName(routine.name);
+        setClient(routine.client?._id || "");
+        setClientIdentificator(routine.clientIdentificator || "");
+        setGroupIdentificator(routine.groupIdentificator || "");
+        setAddVehicleToGroup(routine.addVehicleToGroup || false);
+        setShareVehicle(routine.shareVehicle || false);
+        
+        if (routine.vehicleGroup) {
+          setSelectedVehicleGroup({ id: routine.vehicleGroup });
+        }
+        if (routine.shareGroup) {
+          setSelectedShareGroup({ id: routine.shareGroup });
+        }
+      }
+    } else {
+      resetForm();
+    }
+  }, [routineId, routines]);
+
+  const resetForm = () => {
+    setName("");
+    setClient("");
+    setClientIdentificator("");
+    setGroupIdentificator("");
+    setAddVehicleToGroup(false);
+    setShareVehicle(false);
+    setSelectedVehicleGroup(null);
+    setSelectedShareGroup(null);
+  };
+
   const carregarGrupos = async () => {
     setLoadingGroups(true);
     try {
@@ -45,7 +81,6 @@ export function RoutineForm({ onSuccess }: { onSuccess?: () => void }) {
     }
   };
 
-  /** carregar grupos de share */
   const carregarUserGroups = async () => {
     setLoadingGroups(true);
     try {
@@ -56,52 +91,77 @@ export function RoutineForm({ onSuccess }: { onSuccess?: () => void }) {
     }
   };
 
-  /** resetar campos condicionais */
   useEffect(() => {
-    if (!addVehicleToGroup) {
-      setSelectedVehicleGroup(null);
-    }
+    if (!addVehicleToGroup) setSelectedVehicleGroup(null);
   }, [addVehicleToGroup]);
 
   useEffect(() => {
-    if (!shareVehicle) {
-      setSelectedShareGroup(null);
-    }
+    if (!shareVehicle) setSelectedShareGroup(null);
   }, [shareVehicle]);
 
   async function handleSubmit() {
-    await createRoutine({
+    if (!name || !client) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha o nome da rotina e selecione um cliente.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const data = {
       name,
       client,
       clientIdentificator,
       groupIdentificator,
-
       addVehicleToGroup,
       vehicleGroup: selectedVehicleGroup?.id ?? null,
-
       shareVehicle,
       shareGroup: selectedShareGroup?.id ?? null,
-    });
+    };
 
-    onSuccess?.();
+    try {
+      if (routineId && routineId !== null) {
+        console.log("Atualizando rotina ID:", routineId);
+        await updateRoutine({ id: routineId, data });
+        toast({
+          title: "Rotina atualizada",
+          description: "A rotina foi atualizada com sucesso.",
+        });
+      } else {
+        console.log("Criando nova rotina");
+        await createRoutine(data);
+        toast({
+          title: "Rotina criada",
+          description: "A rotina foi criada com sucesso.",
+        });
+      }
+      resetForm();
+      onSuccess?.();
+    } catch (error) {
+      console.error("Erro ao salvar rotina:", error);
+      toast({
+        title: "Erro",
+        description: routineId ? "Erro ao atualizar rotina." : "Erro ao criar rotina.",
+        variant: "destructive",
+      });
+    }
   }
+
+  const isLoading = isCreating || isUpdating;
 
   return (
     <div className="space-y-4">
-
-        <div>
-            <Label>Rotina</Label>
-                   {/* Nome */}
-      <InputWithIcon
-        placeholder="Nome da rotina"
+      <div>
+        <Label>Rotina</Label>
+        <InputWithIcon
+          placeholder="Nome da rotina"
           icon={<Tag className="h-4 w-4" />}
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+      </div>
 
-        </div>
-   
-      {/* Cliente */}
       <div className="space-y-1">
         <Label>Cliente</Label>
         <select
@@ -119,20 +179,19 @@ export function RoutineForm({ onSuccess }: { onSuccess?: () => void }) {
       </div>
 
       <InputWithIcon
-        placeholder="Client Identificator"
-        icon={<User className="h-4 w-4" />}
+        placeholder="Identificador do cliente"
+        icon={<SearchCheck className="h-4 w-4" />}
         value={clientIdentificator}
         onChange={(e) => setClientIdentificator(e.target.value)}
       />
 
       <InputWithIcon
-        placeholder="Group Identificator"
-        icon={<Layers className="h-4 w-4" />}
+        placeholder="Identificador do grupo de veículos"
+        icon={<ScanSearch className="h-4 w-4" />}
         value={groupIdentificator}
         onChange={(e) => setGroupIdentificator(e.target.value)}
       />
 
-      {/* ADD VEHICLE */}
       <div className="flex items-center justify-between rounded-lg border p-4">
         <div>
           <Label>Adicionar veículo a grupo</Label>
@@ -156,7 +215,6 @@ export function RoutineForm({ onSuccess }: { onSuccess?: () => void }) {
         />
       )}
 
-      {/* SHARE */}
       <div className="flex items-center justify-between rounded-lg border p-4">
         <div>
           <Label>Compartilhar veículo</Label>
@@ -177,10 +235,14 @@ export function RoutineForm({ onSuccess }: { onSuccess?: () => void }) {
         />
       )}
 
-      {/* ACTIONS */}
-      <div className="flex justify-end gap-2">
-        <Button onClick={handleSubmit} disabled={isCreating}>
-          Criar rotina
+      <div className="flex justify-end gap-2 pt-4">
+        {onCancel && (
+          <Button variant="outline" onClick={onCancel} disabled={isLoading}>
+            Cancelar
+          </Button>
+        )}
+        <Button onClick={handleSubmit} disabled={isLoading}>
+          {isLoading ? "Salvando..." : routineId ? "Atualizar" : "Criar rotina"}
         </Button>
       </div>
     </div>

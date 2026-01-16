@@ -29,7 +29,7 @@ async function listarUserGroups(): Promise<UserGroup[]> {
     );
     return res.data.value || [];
   } catch (err: any) {
-    console.error("❌ Erro ao listar grupos:", err.response?.data || err.message);
+    console.error(" Erro ao listar grupos:", err.response?.data || err.message);
     return [];
   }
 }
@@ -52,7 +52,7 @@ async function buscarVeiculoPorDescription(description: string): Promise<string 
     const vehicles = res.data.value || [];
     return vehicles.length > 0 ? vehicles[0].id : null;
   } catch (err: any) {
-    console.error(`❌ Erro ao buscar veículo ${description}:`, err.response?.data || err.message);
+    console.error(` Erro ao buscar veículo ${description}:`, err.response?.data || err.message);
     return null;
   }
 }
@@ -75,7 +75,7 @@ async function buscarVeiculoPorVin(vin: string): Promise<string | null> {
     const vehicles = res.data.value || [];
     return vehicles.length > 0 ? vehicles[0].id : null;
   } catch (err: any) {
-    console.error(`❌ Erro ao buscar veículo por VIN ${vin}:`, err.response?.data || err.message);
+    console.error(` Erro ao buscar veículo por VIN ${vin}:`, err.response?.data || err.message);
     return null;
   }
 }
@@ -112,7 +112,7 @@ async function compartilharVeiculo(vehicleId: string, userGroupId: string): Prom
     );
     return true;
   } catch (err: any) {
-    console.error(`❌ Erro ao compartilhar veículo ${vehicleId}:`, err.response?.data || err.message);
+    console.error(` Erro ao compartilhar veículo ${vehicleId}:`, err.response?.data || err.message);
     return false;
   }
 }
@@ -134,12 +134,12 @@ async function compartilharVeiculosEmLote(
     const identifierTrimmed = identifier.toString().trim();
     if (!identifierTrimmed) continue;
 
-    console.log(`🔎 Processando veículo (${typeLabel}): ${identifierTrimmed}`);
+    console.log(` Processando veículo (${typeLabel}): ${identifierTrimmed}`);
 
     const vehicleId = await buscarVeiculo(identifierTrimmed, shareType);
     if (!vehicleId) {
       const errorMsg = `Veículo não encontrado (${typeLabel}): ${identifierTrimmed}`;
-      console.log(`❌ ${errorMsg}`);
+      console.log(` ${errorMsg}`);
       sent++;
       if (onProgress) onProgress(sent, total, identifierTrimmed, success, errorMsg);
       continue;
@@ -148,7 +148,7 @@ async function compartilharVeiculosEmLote(
     const sucesso = await compartilharVeiculo(vehicleId, userGroupId);
     if (sucesso) {
       success++;
-      console.log(`✅ Veículo ${identifierTrimmed} compartilhado!`);
+      console.log(` Veículo ${identifierTrimmed} compartilhado!`);
     } else {
       const errorMsg = `Erro ao compartilhar (${typeLabel}): ${identifierTrimmed}`;
       if (onProgress) onProgress(sent + 1, total, identifierTrimmed, success, errorMsg);

@@ -43,7 +43,7 @@ async function cadastrarMotoristasEmLote(
     // Envio sequencial dentro do lote
     for (let j = 0; j < chunk.length; j++) {
       const motorista = montarMotorista(chunk[j], i + j);
-      console.log("📤 Enviando motorista:", motorista);
+      console.log(" Enviando motorista:", motorista);
 
       try {
         const token = localStorage.getItem("token");
@@ -58,10 +58,10 @@ async function cadastrarMotoristasEmLote(
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        console.log("✅ Motorista criado:", res.data);
+        console.log("Motorista criado:", res.data);
       } catch (err: any) {
         console.error(
-          `❌ Erro ao criar motorista ${motorista.description}:`,
+          ` Erro ao criar motorista ${motorista.description}:`,
           err.response?.data || err.message
         );
       }

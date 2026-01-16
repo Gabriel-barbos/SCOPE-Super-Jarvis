@@ -36,8 +36,8 @@ const RoutineSchema = new mongoose.Schema(
 
 groupIdentificator: {
   type: String,
-  trim: true,
-  required: true,
+  trim: false,
+  required: false,
 },
     shareGroup: {
       type: String,
