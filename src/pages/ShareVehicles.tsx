@@ -23,7 +23,7 @@ interface ProgressState {
   current?: string;
 }
 
-type ShareType = "description" | "vin";
+type ShareType = "description" | "vin" | "unit_description";
 
 export default function VeiculosShare() {
 
@@ -177,6 +177,8 @@ export default function VeiculosShare() {
           >
             <option value="description">Descrição do Veículo</option>
             <option value="vin">Chassi (VIN)</option>
+            <option value="unit_description">ID do dispositivo</option>
+
           </select>
         </div>
 

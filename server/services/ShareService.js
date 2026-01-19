@@ -1,4 +1,3 @@
-// server/services/ShareService.js
 import fetch from 'node-fetch';
 
 async function shareVehicles({ token, vehicleIdentifiers, shareGroupId }) {

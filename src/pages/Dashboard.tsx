@@ -18,7 +18,6 @@ export default function Dashboard() {
       <div className="text-muted-foreground gap-2 space-y-3">
 
         <ReportCard/>
-        <ReportCheckCard/>
         <CustomReportCard/>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronDown, Settings, LogOut, Building2, Plus, Loader2, CircleCheck, CircleX } from "lucide-react";
+import { ChevronDown,RefreshCw,  LogOut, Building2, Plus, Loader2, CircleCheck, CircleX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -79,7 +79,6 @@ export function Header() {
     }, 200);
   };
 
-  // ➤ Agora limpar cliente significa voltar para o primeiro da lista
   const handleLimparCliente = () => {
     if (clientes.length > 0) {
       handleSelecionarCliente(clientes[0]);
@@ -171,7 +170,7 @@ export function Header() {
           className="text-muted-foreground hover:text-foreground hover:bg-accent"
           onClick={handleLimparCliente}
         >
-          <LogOut className="w-4 h-4" />
+          <RefreshCw  className="w-4 h-4" />
         </Button>
       </div>
 

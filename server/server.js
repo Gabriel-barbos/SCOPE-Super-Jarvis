@@ -33,7 +33,7 @@ app.post('/proxy', async (req, res) => {
       return res.status(400).json({ error: 'Path é obrigatório' });
     }
 
-    // Aceita token do body OU do header Authorization
+    // Aceita token do body do header Authorization
     let token = req.body.token || req.headers.authorization;
 
     if (token && token.toLowerCase().startsWith('bearer ')) {
@@ -82,5 +82,5 @@ app.get('/api/health', (req, res) => {
 
 const PORT = 3001;
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+  console.log(` Servidor rodando em http://localhost:${PORT}`);
 });

@@ -114,7 +114,7 @@ export function UploadComponent({ onExecute, isAnimationActive }: UploadComponen
             <div>
               <p className="text-lg font-semibold">Carregar Planilha</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Arraste ou clique para selecionar (.xlsx, .xls)
+                Arraste ou clique para selecionar(20mb max.)
               </p>
             </div>
           </label>
@@ -171,7 +171,7 @@ export function UploadComponent({ onExecute, isAnimationActive }: UploadComponen
                   </p>
                 </div>
                 <div className="p-4 bg-red-500/10 rounded-lg border border-red-500/20">
-                  <p className="text-sm text-muted-foreground">Erros</p>
+                  <p className="text-sm text-muted-foreground">Carros sem Rotinas</p>
                   <p className="text-2xl font-bold text-red-600">
                     {testResult.summary.errorCount}
                   </p>

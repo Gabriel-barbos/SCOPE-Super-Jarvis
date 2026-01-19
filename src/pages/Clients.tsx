@@ -7,9 +7,7 @@ import { useClients } from "@/hooks/useClients";
 import { ClientsDataTable } from "@/components/ClientsTable";
 export default function Clients() {
 
-  const [clientId, setClientId] = useState<any[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
 
   const { clients, isLoading } = useClients();
@@ -50,12 +48,12 @@ export default function Clients() {
           styleType={editingClientId ? "edit" : "create"}
         >
 
-            <ClientForm clientId={editingClientId} onSuccess={() => setIsDrawerOpen(false)} onCancel={() => setIsDrawerOpen(false)} />
+          <ClientForm clientId={editingClientId} onSuccess={() => setIsDrawerOpen(false)} onCancel={() => setIsDrawerOpen(false)} />
         </UniversalDrawer>
 
       </div>
 
-            <ClientsDataTable onEdit={openEdit} />
+      <ClientsDataTable onEdit={openEdit} />
     </div>
   );
 }   

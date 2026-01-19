@@ -1,4 +1,3 @@
-// server/services/AddVehicle.js
 import fetch from 'node-fetch';
 
 async function addVehiclesToGroup({ token, vehicleIdentifiers, vehicleGroupId }) {

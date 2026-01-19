@@ -47,7 +47,7 @@ class UnidasService {
    * Busca veículos que possuem apenas 1 grupo "isAll=true"
    */
   async buscarVeiculosSemGrupo(
-    lote = 500,
+    lote = 10000,
     onProgress?: (processados: number, total: number, descricao?: string) => void
   ): Promise<Veiculo[]> {
     if (!this.token) {
@@ -73,7 +73,7 @@ class UnidasService {
         const data = res.data;
 
         if (!data?.value || data.value.length === 0) {
-          console.warn("⚠️ Nenhum veículo retornado neste lote");
+          console.warn(" Nenhum veículo retornado neste lote");
           break;
         }
 

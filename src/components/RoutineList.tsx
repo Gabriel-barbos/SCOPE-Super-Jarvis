@@ -1,4 +1,4 @@
-import { Pencil, Trash2, Clock, Users, Share2, FolderDown } from "lucide-react";
+import { Pencil, Trash2, Clock, Users, Share2, FolderDown,SquareUser } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRoutines, Routine } from "@/hooks/useRoutines";
 import { cn } from "@/lib/utils";
@@ -89,7 +89,7 @@ function RoutineRow({ routine, onEdit, onDelete, isDeleting }: RoutineRowProps) 
                 </div>
 
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Users className="w-4 h-4" />
+                    <SquareUser  className="w-4 h-4" />
                     <span>{routine.client?.name}</span>
                 </div>
             </div>

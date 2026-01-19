@@ -14,8 +14,8 @@ interface LoginContextType {
 const LoginContext = createContext<LoginContextType | null>(null);
 
 const CREDENTIALS = {
-  email: "3",
-  password: "123456",
+  email: "Suporte@scope.com",
+  password: "Scope@4091",
 };
 
 const LOGIN_STORAGE_KEY = "system_authenticated";

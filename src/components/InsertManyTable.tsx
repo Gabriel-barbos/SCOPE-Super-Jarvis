@@ -147,7 +147,7 @@ const InsertManyTable = ({
     return `Cole os dados do Excel aqui...\n`;
   };
 
-  // --- Paginação ---
+
   const totalPages = Math.ceil(data.length / PAGE_SIZE);
   const paginatedData = data.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 

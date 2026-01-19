@@ -13,7 +13,7 @@ import Veiculos from "@/pages/Vehicles";
 import VeiculosAtualizar from "@/pages/UpdateVehicles";
 import VeiculosRegistrar from "@/pages/AddGroupPage";
 import VeiculosRemover from "@/pages/RemoveGroupPage";
-import VeiculosShare from "@/pages/VeiculosShare";
+import VeiculosShare from "@/pages/ShareVehicles";
 import VeiculosDeletar from "@/pages/DeleteVehicle";
 import Clients from "@/pages/Clients";
 import Motoristas from "@/pages/Drivers";

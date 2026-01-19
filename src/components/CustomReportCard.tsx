@@ -119,7 +119,7 @@ function CustomReportCard() {
                     </div>
 
                     <div className="flex-1">
-                        <h2 className="text-xl font-semibold">Lista de veículos personalizada <Badge className="ml-2 bg-purple-100 text-purple-800 font-medium px-2 py-1 rounded-lg text-sm">Em teste</Badge> </h2>
+                        <h2 className="text-xl font-semibold">Lista de veículos personalizada  </h2>
                         <p className="text-sm text-muted-foreground">
                             Extraia uma lista de veículos com os campos desejados.
                         </p>

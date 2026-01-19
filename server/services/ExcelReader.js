@@ -21,7 +21,7 @@ class ExcelReader {
           chassi: String(chassi).trim(),
           cliente: String(cliente).trim().toLowerCase(),
           grupo: grupo ? String(grupo).trim().toLowerCase() : null,
-          line: index + 2, // linha real no Excel (debug)
+          line: index + 2, 
         };
       })
       .filter(Boolean);

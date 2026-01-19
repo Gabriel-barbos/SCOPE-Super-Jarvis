@@ -214,13 +214,7 @@ export default function UnidasCard() {
           )}
         </CardContent>
 
-        <CardFooter className="text-xs text-muted-foreground">
-          {executionTime ? (
-            `Última execução: ${executionTime}`
-          ) : (
-            "Última execução: 09/09/2025 às 23:32"
-          )}
-        </CardFooter>
+     
       </Card>
 
       {/* Modal de Detalhes */}

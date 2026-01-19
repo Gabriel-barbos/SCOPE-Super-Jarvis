@@ -9,9 +9,11 @@ interface Vehicle {
   id: string;
   description: string;
   vin?: string;
+  unit_description?: string;
 }
 
-type ShareType = "description" | "vin";
+
+type ShareType = "description" | "vin" | "unit_description";
 
 // Lista todos os grupos de usuários
 async function listarUserGroups(): Promise<UserGroup[]> {
@@ -57,6 +59,34 @@ async function buscarVeiculoPorDescription(description: string): Promise<string 
   }
 }
 
+async function buscarVeiculoPorUnitDescription(
+  unitDescription: string
+): Promise<string | null> {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await proxyApi.post(
+      "/proxy",
+      {
+        path: `/Vehicles?$filter=unit_Description eq '${unitDescription}'&$select=id,unit_Description`,
+        method: "GET",
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    const vehicles = res.data.value || [];
+    return vehicles.length > 0 ? vehicles[0].id : null;
+  } catch (err: any) {
+    console.error(
+      `Erro ao buscar veículo por unit_description ${unitDescription}:`,
+      err.response?.data || err.message
+    );
+    return null;
+  }
+}
+
+
 // Busca veículo por VIN
 async function buscarVeiculoPorVin(vin: string): Promise<string | null> {
   try {
@@ -81,15 +111,20 @@ async function buscarVeiculoPorVin(vin: string): Promise<string | null> {
 }
 
 async function buscarVeiculo(
-  identifier: string, 
+  identifier: string,
   type: ShareType
 ): Promise<string | null> {
-  if (type === "vin") {
-    return await buscarVeiculoPorVin(identifier);
-  } else {
-    return await buscarVeiculoPorDescription(identifier);
+  switch (type) {
+    case "vin":
+      return buscarVeiculoPorVin(identifier);
+    case "unit_description":
+      return buscarVeiculoPorUnitDescription(identifier);
+    case "description":
+    default:
+      return buscarVeiculoPorDescription(identifier);
   }
 }
+
 
 // Compartilha um veículo com o grupo
 async function compartilharVeiculo(vehicleId: string, userGroupId: string): Promise<boolean> {
