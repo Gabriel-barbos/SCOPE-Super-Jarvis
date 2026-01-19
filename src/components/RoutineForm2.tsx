@@ -4,18 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { ScanSearch, AlarmClockPlus, SearchCheck } from "lucide-react";
-
+import { ScanSearch, Tag, SearchCheck } from "lucide-react";
 import { useRoutines } from "@/hooks/useRoutines";
 import { useClients } from "@/hooks/useClients";
-import ComboboxSelector from "./ComboboxSelector";
+import SelectGroup from "./share/SelectGroup";
+import GroupSelector from "./global/GroupSelector";
 import vehicleService from "@/services/VehicleGroupService";
 import ShareService from "@/services/ShareService";
-
-interface Group {
-  id: string;
-  description: string;
-}
 
 interface RoutineFormProps {
   routineId?: string | null;
@@ -34,96 +29,36 @@ export function RoutineForm({ routineId, onSuccess, onCancel }: RoutineFormProps
   const [groupIdentificator, setGroupIdentificator] = useState("");
   const [addVehicleToGroup, setAddVehicleToGroup] = useState(false);
   const [shareVehicle, setShareVehicle] = useState(false);
+  const [vehicleGroups, setVehicleGroups] = useState<any[]>([]);
+  const [userGroups, setUserGroups] = useState<any[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
+  const [selectedVehicleGroup, setSelectedVehicleGroup] = useState<any>(null);
+  const [selectedShareGroup, setSelectedShareGroup] = useState<any>(null);
+  const [openVehicleGroup, setOpenVehicleGroup] = useState(false);
 
-  const [vehicleGroups, setVehicleGroups] = useState<Group[]>([]);
-  const [userGroups, setUserGroups] = useState<Group[]>([]);
-  const [loadingVehicleGroups, setLoadingVehicleGroups] = useState(false);
-  const [loadingUserGroups, setLoadingUserGroups] = useState(false);
-
-  const [selectedVehicleGroup, setSelectedVehicleGroup] = useState<Group | null>(null);
-  const [selectedShareGroup, setSelectedShareGroup] = useState<Group | null>(null);
-
+  // Carregar dados da rotina ao editar
   useEffect(() => {
     if (routineId) {
-      loadRoutineData();
+      const routine = routines.find((r) => r._id === routineId);
+      if (routine) {
+        setName(routine.name);
+        setClient(routine.client?._id || "");
+        setClientIdentificator(routine.clientIdentificator || "");
+        setGroupIdentificator(routine.groupIdentificator || "");
+        setAddVehicleToGroup(routine.addVehicleToGroup || false);
+        setShareVehicle(routine.shareVehicle || false);
+        
+        if (routine.vehicleGroup) {
+          setSelectedVehicleGroup({ id: routine.vehicleGroup });
+        }
+        if (routine.shareGroup) {
+          setSelectedShareGroup({ id: routine.shareGroup });
+        }
+      }
     } else {
       resetForm();
     }
   }, [routineId, routines]);
-
-  useEffect(() => {
-    if (addVehicleToGroup) {
-      loadVehicleGroups();
-    } else {
-      setSelectedVehicleGroup(null);
-    }
-  }, [addVehicleToGroup]);
-
-  useEffect(() => {
-    if (shareVehicle) {
-      loadUserGroups();
-    } else {
-      setSelectedShareGroup(null);
-    }
-  }, [shareVehicle]);
-
-  const loadRoutineData = async () => {
-    const routine = routines.find((r) => r._id === routineId);
-    if (!routine) return;
-
-    setName(routine.name);
-    setClient(routine.client?._id || "");
-    setClientIdentificator(routine.clientIdentificator || "");
-    setGroupIdentificator(routine.groupIdentificator || "");
-    setAddVehicleToGroup(routine.addVehicleToGroup || false);
-    setShareVehicle(routine.shareVehicle || false);
-
-    if (routine.addVehicleToGroup && routine.vehicleGroup) {
-      const groups = await loadVehicleGroups();
-      const found = groups.find((g) => g.id === routine.vehicleGroup);
-      if (found) setSelectedVehicleGroup(found);
-    }
-
-    if (routine.shareVehicle && routine.shareGroup) {
-      const groups = await loadUserGroups();
-      const found = groups.find((g) => g.id === routine.shareGroup);
-      if (found) setSelectedShareGroup(found);
-    }
-  };
-
-  const loadVehicleGroups = async () => {
-    setLoadingVehicleGroups(true);
-    try {
-      const groups = await vehicleService.listarGrupos();
-      setVehicleGroups(groups);
-      
-      if (selectedVehicleGroup) {
-        const updated = groups.find((g) => g.id === selectedVehicleGroup.id);
-        if (updated) setSelectedVehicleGroup(updated);
-      }
-      
-      return groups;
-    } finally {
-      setLoadingVehicleGroups(false);
-    }
-  };
-
-  const loadUserGroups = async () => {
-    setLoadingUserGroups(true);
-    try {
-      const groups = await ShareService.listarUserGroups();
-      setUserGroups(groups);
-      
-      if (selectedShareGroup) {
-        const updated = groups.find((g) => g.id === selectedShareGroup.id);
-        if (updated) setSelectedShareGroup(updated);
-      }
-      
-      return groups;
-    } finally {
-      setLoadingUserGroups(false);
-    }
-  };
 
   const resetForm = () => {
     setName("");
@@ -136,29 +71,39 @@ export function RoutineForm({ routineId, onSuccess, onCancel }: RoutineFormProps
     setSelectedShareGroup(null);
   };
 
-  const handleSubmit = async () => {
+  const carregarGrupos = async () => {
+    setLoadingGroups(true);
+    try {
+      const grupos = await vehicleService.listarGrupos();
+      setVehicleGroups(grupos);
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
+
+  const carregarUserGroups = async () => {
+    setLoadingGroups(true);
+    try {
+      const groups = await ShareService.listarUserGroups();
+      setUserGroups(groups);
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!addVehicleToGroup) setSelectedVehicleGroup(null);
+  }, [addVehicleToGroup]);
+
+  useEffect(() => {
+    if (!shareVehicle) setSelectedShareGroup(null);
+  }, [shareVehicle]);
+
+  async function handleSubmit() {
     if (!name || !client) {
       toast({
         title: "Campos obrigatórios",
         description: "Preencha o nome da rotina e selecione um cliente.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (addVehicleToGroup && !selectedVehicleGroup) {
-      toast({
-        title: "Grupo de veículos obrigatório",
-        description: "Selecione um grupo de veículos ou desative a opção.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (shareVehicle && !selectedShareGroup) {
-      toast({
-        title: "Grupo de compartilhamento obrigatório",
-        description: "Selecione um grupo para compartilhar ou desative a opção.",
         variant: "destructive",
       });
       return;
@@ -170,19 +115,21 @@ export function RoutineForm({ routineId, onSuccess, onCancel }: RoutineFormProps
       clientIdentificator,
       groupIdentificator,
       addVehicleToGroup,
-      vehicleGroup: selectedVehicleGroup?.id || null,
+      vehicleGroup: selectedVehicleGroup?.id ?? null,
       shareVehicle,
-      shareGroup: selectedShareGroup?.id || null,
+      shareGroup: selectedShareGroup?.id ?? null,
     };
 
     try {
-      if (routineId) {
+      if (routineId && routineId !== null) {
+        console.log("Atualizando rotina ID:", routineId);
         await updateRoutine({ id: routineId, data });
         toast({
           title: "Rotina atualizada",
           description: "A rotina foi atualizada com sucesso.",
         });
       } else {
+        console.log("Criando nova rotina");
         await createRoutine(data);
         toast({
           title: "Rotina criada",
@@ -192,13 +139,14 @@ export function RoutineForm({ routineId, onSuccess, onCancel }: RoutineFormProps
       resetForm();
       onSuccess?.();
     } catch (error) {
+      console.error("Erro ao salvar rotina:", error);
       toast({
         title: "Erro",
         description: routineId ? "Erro ao atualizar rotina." : "Erro ao criar rotina.",
         variant: "destructive",
       });
     }
-  };
+  }
 
   const isLoading = isCreating || isUpdating;
 
@@ -208,7 +156,7 @@ export function RoutineForm({ routineId, onSuccess, onCancel }: RoutineFormProps
         <Label>Rotina</Label>
         <InputWithIcon
           placeholder="Nome da rotina"
-          icon={<AlarmClockPlus className="h-4 w-4" />}
+          icon={<Tag className="h-4 w-4" />}
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
@@ -255,15 +203,15 @@ export function RoutineForm({ routineId, onSuccess, onCancel }: RoutineFormProps
       </div>
 
       {addVehicleToGroup && (
-        <ComboboxSelector
+        <GroupSelector
+          vehicleGroups={vehicleGroups}
+          selectedGroup={selectedVehicleGroup}
+          onSelectGroup={setSelectedVehicleGroup}
+          loading={loadingGroups}
+          onRefresh={carregarGrupos}
+          open={openVehicleGroup}
+          onOpenChange={setOpenVehicleGroup}
           label="Grupo de veículos"
-          items={vehicleGroups}
-          selectedItem={selectedVehicleGroup}
-          loading={loadingVehicleGroups}
-          onSelect={setSelectedVehicleGroup}
-          onReload={loadVehicleGroups}
-          placeholder="Buscar grupo..."
-          emptyMessage="Nenhum grupo de veículos encontrado."
         />
       )}
 
@@ -278,15 +226,12 @@ export function RoutineForm({ routineId, onSuccess, onCancel }: RoutineFormProps
       </div>
 
       {shareVehicle && (
-        <ComboboxSelector
-          label="Grupo de destino"
-          items={userGroups}
-          selectedItem={selectedShareGroup}
-          loading={loadingUserGroups}
+        <SelectGroup
+          userGroups={userGroups}
+          selectedGroup={selectedShareGroup}
+          loading={loadingGroups}
           onSelect={setSelectedShareGroup}
-          onReload={loadUserGroups}
-          placeholder="Buscar conta..."
-          emptyMessage="Nenhuma conta encontrada."
+          onReload={carregarUserGroups}
         />
       )}
 

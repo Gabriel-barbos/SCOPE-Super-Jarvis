@@ -96,6 +96,7 @@ export default function Rotinas() {
         title={editingRoutineId ? "Editar Rotina" : "Cadastrar Rotina"}
         icon={editingRoutineId ? <SquarePen /> : <CirclePlus />}
         styleType={editingRoutineId ? "edit" : "create"}
+        size="lg"
       >
         <div className="max-h-[calc(100vh-160px)] overflow-y-auto pr-2">
           <RoutineForm
