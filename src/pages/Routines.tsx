@@ -1,38 +1,20 @@
-import { CalendarClock, Zap, Play, Upload, CheckCircle, X } from "lucide-react";
+import { CalendarClock, Zap } from "lucide-react";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
-import UnidasCard from "@/components/UnidasCard";
 import { AnimatedBeamMultipleOutputDemo } from "@/components/RoutineCard";
 import { UploadComponent } from "@/components/UploadComponent";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { UniversalDrawer } from "@/components/global/UniversalDrawer";
-
-import { CirclePlus, ContactRound, IdCard, SquarePen, UserRoundPlus } from "lucide-react";
+import { CirclePlus, SquarePen } from "lucide-react";
 import { RoutineForm } from "@/components/RoutineForm";
 import { RoutineList } from "@/components/RoutineList";
-
-interface SpreadsheetData {
-  name: string;
-  routines: number;
-  installations: number;
-}
+import UnidasCard from "@/components/UnidasCard";
 
 export default function Rotinas() {
-  const [routineId, setRoutineId] = useState<string | null>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [data, setData] = useState<SpreadsheetData | null>(null);
   const [isAnimationActive, setIsAnimationActive] = useState(false);
   const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  // abrir drawer em modo criar
   function openCreate() {
     setEditingRoutineId(null);
     setIsDrawerOpen(true);
@@ -42,35 +24,6 @@ export default function Rotinas() {
     setEditingRoutineId(routineId);
     setIsDrawerOpen(true);
   }
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
-
-    setFile(selectedFile);
-    setIsLoading(true);
-
-    // Simula carregamento da planilha
-    setTimeout(() => {
-      setData({
-        name: "Planilha de Instalação",
-        routines: 8,
-        installations: 244,
-      });
-      setIsLoading(false);
-    }, 2000);
-  };
-
-  const handleExecute = () => {
-    setIsAnimationActive(true);
-  };
-
-  const handleReset = () => {
-    setFile(null);
-    setData(null);
-    setIsAnimationActive(false);
-  };
-
-  const hasFile = file !== null;
 
   return (
     <div className="space-y-6 p-6">
@@ -87,17 +40,34 @@ export default function Rotinas() {
           </div>
         </div>
       </div>
+
       <Tabs defaultValue="engine" className="space-y-6 rounded-sm border border-border bg-card p-4">
         <TabsList className="border-b border-border rounded-none justify-start">
           <TabsTrigger value="engine">Motor de Rotinas</TabsTrigger>
           <TabsTrigger value="routines">Gerenciar Rotinas</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="engine"> <div className="rounded-xl border border-border p-6 shadow-md"> <div className="flex items-center gap-3 mb-6"> <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md"> <Zap className="w-5 h-5 text-white" /> </div> <h2 className="text-2xl font-bold text-foreground"> Alocação automática de Grupos e Share </h2> </div> <AnimatedBeamMultipleOutputDemo isActive={isAnimationActive} /> <UploadComponent onExecute={() => setIsAnimationActive(true)} isAnimationActive={isAnimationActive} /> </div> </TabsContent>
+        <TabsContent value="engine">
+          <div className="rounded-xl border border-border p-6 shadow-md space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+                <Zap className="w-5 h-5 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-foreground">
+                Alocação automática de Grupos e Share
+              </h2>
+            </div>
+
+            <AnimatedBeamMultipleOutputDemo isActive={isAnimationActive} />
+
+            <UploadComponent
+              onExecute={() => setIsAnimationActive(true)}
+              isAnimationActive={isAnimationActive}
+            />
+          </div>
+        </TabsContent>
 
         <TabsContent value="routines" className="space-y-4">
-
-
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold">Rotinas cadastradas</h2>
@@ -114,10 +84,9 @@ export default function Rotinas() {
 
           <UnidasCard />
           <RoutineList onEdit={openEdit} />
-
         </TabsContent>
-
       </Tabs>
+
       <UniversalDrawer
         open={isDrawerOpen}
         onOpenChange={(open) => {
@@ -136,9 +105,6 @@ export default function Rotinas() {
           />
         </div>
       </UniversalDrawer>
-
-
     </div>
   );
 }
-
