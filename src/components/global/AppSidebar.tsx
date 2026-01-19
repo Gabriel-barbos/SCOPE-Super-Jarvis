@@ -1,4 +1,4 @@
-import { Car, Brain,CalendarClock,FolderPlus ,IdCard,FolderMinus, OctagonX ,UserCheck, Home, ChevronDown, ClipboardPen, UserPlus, UserMinus, Share2, Trash2 } from "lucide-react"
+import { Car, Brain, CalendarClock, FolderPlus, IdCard, FolderMinus, OctagonX, UserCheck, Home, ChevronDown, ClipboardPen, UserPlus, UserMinus, Share2, Trash2, Bot } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 import { useState } from "react"
 import { LogoutButton } from "./LogoutButton"
@@ -25,30 +25,30 @@ import {
 } from "@/components/ui/collapsible"
 
 const items = [
-  { 
-    title: "Dashboard", 
-    url: "/", 
-    icon: Home 
+  {
+    title: "Dashboard",
+    url: "/",
+    icon: Home
   },
-  { 
-    title: "Acessos", 
-    url: "/users", 
-    icon: IdCard  
+  {
+    title: "Acessos",
+    url: "/users",
+    icon: IdCard
   },
-  { 
-    title: "Motoristas", 
-    url: "/drivers", 
-    icon: UserCheck 
+  {
+    title: "Motoristas",
+    url: "/drivers",
+    icon: UserCheck
   },
-    { 
-    title: "Rotinas", 
-    url: "/routines", 
-    icon: CalendarClock 
+  {
+    title: "Rotinas",
+    url: "/routines",
+    icon: CalendarClock
   },
-     { 
-    title: "Remoção", 
-    url: "/deinstallation", 
-    icon: OctagonX  
+  {
+    title: "Remoção",
+    url: "/deinstallation",
+    icon: OctagonX
   },
 ]
 
@@ -66,7 +66,7 @@ const vehicleSubItems = [
   {
     title: "Remover do grupo",
     url: "/vehicles/remove",
-    icon: FolderMinus 
+    icon: FolderMinus
   },
   {
     title: "Share de veículos",
@@ -96,20 +96,35 @@ export function AppSidebar() {
   const isVehicleRouteActive = currentPath.startsWith("/veiculos")
 
   return (
-    <Sidebar 
+    <Sidebar
       className="border-r border-sidebar-border bg-sidebar transition-all duration-300"
       collapsible="icon"
     >
       <SidebarContent className="bg-sidebar">
         <div className="p-4 border-b border-sidebar-border">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-              <Brain className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500
+                animate-gradient-x flex items-center justify-center
+                shadow-[0_0_15px_rgba(139,92,246,0.6)]">
+              <Bot className="w-4 h-4 text-white" />
             </div>
+
             {open && (
-              <div className="text-sidebar-foreground font-semibold">
-                Jarvis API - Scope
+              <div
+                className="
+    text-lg font-semibold
+    bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400
+    bg-[length:200%_auto]
+    animate-gradient-x
+    bg-clip-text text-transparent
+    drop-shadow-[0_0_12px_rgba(139,92,246,0.6)]
+    transition-all duration-300
+  "
+              >
+
+                Super Jarvis
               </div>
+
             )}
           </div>
         </div>
@@ -122,12 +137,12 @@ export function AppSidebar() {
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
+                  <SidebarMenuButton
                     asChild
                     className={`
                       w-full transition-all duration-200 rounded-lg
-                      ${isActive(item.url) 
-                        ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium shadow-sm" 
+                      ${isActive(item.url)
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium shadow-sm"
                         : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       }
                     `}
@@ -139,40 +154,39 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-              
+
               {/* Submenu de Veículos */}
               <SidebarMenuItem>
-                <Collapsible 
-                  open={vehicleSubmenuOpen || isVehicleRouteActive} 
+                <Collapsible
+                  open={vehicleSubmenuOpen || isVehicleRouteActive}
                   onOpenChange={setVehicleSubmenuOpen}
                 >
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton
                       className={`
                         w-full transition-all duration-200 rounded-lg
-                        ${isVehicleRouteActive 
-                          ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium shadow-sm" 
+                        ${isVehicleRouteActive
+                          ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium shadow-sm"
                           : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         }
                       `}
                     >
                       <Car className="w-4 h-4" />
                       <span>Veículos</span>
-                      <ChevronDown className={`ml-auto h-4 w-4 transition-transform duration-200 ${
-                        vehicleSubmenuOpen || isVehicleRouteActive ? "rotate-180" : ""
-                      }`} />
+                      <ChevronDown className={`ml-auto h-4 w-4 transition-transform duration-200 ${vehicleSubmenuOpen || isVehicleRouteActive ? "rotate-180" : ""
+                        }`} />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub>
                       {vehicleSubItems.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton 
+                          <SidebarMenuSubButton
                             asChild
                             className={`
                               transition-all duration-200 rounded-lg
-                              ${isActive(subItem.url) 
-                                ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium shadow-sm" 
+                              ${isActive(subItem.url)
+                                ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium shadow-sm"
                                 : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                               }
                             `}
@@ -190,7 +204,7 @@ export function AppSidebar() {
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
-          <LogoutButton  />
+          <LogoutButton />
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>
