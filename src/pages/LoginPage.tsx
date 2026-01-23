@@ -76,7 +76,7 @@ const LoginPage = () => {
 
                         {/* Container do Super Jarvis com efeitos */}
                         <div className="flex items-center justify-center gap-3 md:gap-4">
-                     
+
                             <h2
                                 className="text-5xl
   sm:text-6xl
@@ -117,11 +117,11 @@ const LoginPage = () => {
                             }}
                         />
 
-                     
+
                     </div>
                 </div>
 
-           
+
                 <style>{`
           @keyframes fadeInDown {
             from {
@@ -197,7 +197,7 @@ const LoginPage = () => {
             {/* Lado direito - Formulário de Login */}
             <div className="w-full lg:w-2/5 ... flex items-center justify-center p-8 overflow-y-auto">       <div className="w-full max-w-md space-y-6 lg:space-y-8">
 
-            
+
                 <div className="flex justify-center">
                     <div className="relative group">
                         {/* Glow effect responsivo */}

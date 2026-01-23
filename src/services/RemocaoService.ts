@@ -92,7 +92,7 @@ async function marcarVeiculoComoRemovido(
 
     await proxyApi.post(
       "/proxy",
-      {
+      {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
         path: `/Vehicles(${vehicleId})`,
         method: "PATCH",
         body: { description: novaDescricao },
