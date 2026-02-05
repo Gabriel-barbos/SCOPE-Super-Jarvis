@@ -21,7 +21,7 @@ export interface UpdateClientDTO extends Partial<CreateClientDTO> {}
 
 
 const api = axios.create({
-  baseURL: "http://localhost:3001/api/clients",
+  baseURL: "https://scopeserver.onrender.com/api/jarvis/clients",
 });
 export function useClients() {
   const queryClient = useQueryClient();

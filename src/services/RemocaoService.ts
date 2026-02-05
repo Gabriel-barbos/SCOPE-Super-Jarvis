@@ -152,7 +152,7 @@ async function removerDeTodosOsGrupos(vehicleId: string): Promise<boolean> {
     console.log(` Veículo ${vehicleId} removido de ${groupIds.length} grupo(s)`);
     return true;
   } catch (err: any) {
-    console.error("❌ Erro ao remover de todos os grupos:", err.response?.data || err.message);
+    console.error(" Erro ao remover de todos os grupos:", err.response?.data || err.message);
     return false;
   }
 }

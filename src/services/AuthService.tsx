@@ -19,7 +19,7 @@ type AuthContextType = {
 };
 
 // Constantes
-const API_URL = "http://localhost:3001/api/get-token";
+const API_URL = "https://scopeserver.onrender.com/api/jarvis/get-token";
 const TOKEN_DURATION = 60 * 60 * 1000; 
 const REFRESH_BEFORE = 5 * 60 * 1000; 
 

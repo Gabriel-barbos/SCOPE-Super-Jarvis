@@ -8,8 +8,10 @@ import clientRoutes from './routes/ClientRoutes.js';
 import routineRoutes from './routes/RoutineRoutes.js';
 import engineRoutes from './routes/EngineRoutes.js';
 import tokenRoutes from './routes/TokenRoutes.js';
+import dns from "node:dns/promises";
 
 dotenv.config();
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
 const app = express();
 app.use(cors());

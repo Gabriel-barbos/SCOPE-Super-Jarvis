@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const proxyApi = axios.create({
-  baseURL: "http://localhost:3001", 
+  baseURL: "https://scopeserver.onrender.com/api/jarvis", 
   timeout: 20000,
 });
 

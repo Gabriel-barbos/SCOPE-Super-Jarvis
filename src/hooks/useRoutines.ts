@@ -43,7 +43,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:3001/api/routines",
+  baseURL: "https://scopeserver.onrender.com/api/jarvis/routines",
 });
 
 export function useRoutines() {
