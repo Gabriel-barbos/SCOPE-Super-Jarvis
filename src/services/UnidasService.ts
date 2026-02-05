@@ -12,7 +12,7 @@ class UnidasService {
 
   constructor() {
     this.api = axios.create({
-      baseURL: "https://scopeserver.onrender.com",
+      baseURL: "https://scopeserver.onrender.com/api/jarvis",
       timeout: 20000,
     });
   }
