@@ -64,7 +64,7 @@ class UnidasService {
 
     try {
       while (hasMore) {
-        const res = await this.api.post("/proxy", {
+        const res = await this.api.post("/", {
           path: `/Vehicles?$expand=vehicleGroups&$top=${lote}&$skip=${skip}&$count=true`,
           method: "GET",
           token: this.token,
@@ -125,7 +125,7 @@ class UnidasService {
     try {
       console.log(` Adicionando ${vehicleIds.length} veículos ao grupo "${groupId}"...`);
 
-      await this.api.post("/proxy", {
+      await this.api.post("/", {
         path: `/VehicleGroups(${groupId})/_.addVehicles`,
         method: "POST",
         token: this.token,
