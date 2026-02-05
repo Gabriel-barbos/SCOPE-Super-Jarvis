@@ -12,7 +12,7 @@ class UnidasService {
 
   constructor() {
     this.api = axios.create({
-      baseURL: "http://localhost:3001",
+      baseURL: "https://scopeserver.onrender.com",
       timeout: 20000,
     });
   }
