@@ -7,9 +7,9 @@
 /* 
  * DESIGN SYSTEM - Sistema de Cores e Estilos Centralizado
  * Tema: Dark moderno com detalhes em azul
- * Todas as cores DEVEM ser HSL para consistência d
+ * Todas as cores DEVEM ser HSL para consistência
  */
- c
+
 @layer base {
   :root {
     /* Sistema de cores DARK por padrão */
