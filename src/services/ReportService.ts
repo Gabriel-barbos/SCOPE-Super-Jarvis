@@ -99,7 +99,10 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 
 //API CALLS
-async function buscarTodosVeiculos(onProgress?: ProgressCallback): Promise<Vehicle[]> {
+async function buscarTodosVeiculos(
+  onProgress?: ProgressCallback,
+  filtrarAtivos = false
+): Promise<Vehicle[]> {
   const veiculos: Vehicle[] = [];
   const token = localStorage.getItem("token");
   let skip = 0;
@@ -122,8 +125,12 @@ async function buscarTodosVeiculos(onProgress?: ProgressCallback): Promise<Vehic
       }
     );
 
-    const dados = response.data.value || [];
-    veiculos.push(...dados);
+    const dados: Vehicle[] = response.data.value || [];
+    const pagina = filtrarAtivos
+      ? dados.filter(v => !v.description?.trim().toUpperCase().startsWith("REMOVIDO"))
+      : dados;
+
+    veiculos.push(...pagina);
 
     if (dados.length < CONFIG.PAGE_SIZE) break;
 
@@ -239,10 +246,10 @@ async function exportarVeiculos(
  */
 async function gerarRelatorioPersonalizado(
   camposSelecionadosFrontend: string[],
-  onProgress?: ProgressCallback
+  onProgress?: ProgressCallback,
+  filtrarAtivos = false
 ): Promise<ExportResult> {
   try {
-    // Mapeia campos do frontend para o backend
     const camposSelecionados = camposSelecionadosFrontend
       .map(campo => CAMPO_MAP[campo])
       .filter((campo): campo is CampoKey => Boolean(campo));
@@ -258,20 +265,12 @@ async function gerarRelatorioPersonalizado(
     const nomeArquivo = gerarNomeArquivo('Relatorio_Personalizado');
 
     onProgress?.(0, 0, "Iniciando exportação personalizada...");
-    const veiculos = await buscarTodosVeiculos(onProgress);
+    const veiculos = await buscarTodosVeiculos(onProgress, filtrarAtivos);
 
-    onProgress?.(
-      veiculos.length,
-      veiculos.length,
-      "Formatando dados..."
-    );
+    onProgress?.(veiculos.length, veiculos.length, "Formatando dados...");
     const dados = formatarDados(veiculos, camposSelecionados);
 
-    onProgress?.(
-      veiculos.length,
-      veiculos.length,
-      "Gerando arquivo Excel..."
-    );
+    onProgress?.(veiculos.length, veiculos.length, "Gerando arquivo Excel...");
     gerarExcel(dados, camposSelecionados, nomeArquivo);
 
     onProgress?.(
@@ -288,7 +287,7 @@ async function gerarRelatorioPersonalizado(
   } catch (error: any) {
     console.error('Erro ao gerar relatório personalizado:', error);
     onProgress?.(0, 0, "Erro ao gerar relatório personalizado");
-    
+
     return {
       success: false,
       message: error.message || "Erro ao gerar relatório",

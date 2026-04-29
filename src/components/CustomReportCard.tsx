@@ -9,11 +9,12 @@ import {
     Car,
     IdCard,
     CarFront,
-    MapPin,
     Calendar,
     Gauge,
     CalendarCheck
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ function CustomReportCard() {
     const [result, setResult] = useState<{ success: boolean; message: string; total: number } | null>(null);
     const [showModal, setShowModal] = useState(false);
     const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
+    const [apenasAtivos, setApenasAtivos] = useState(false);
 
     const handleGerarRelatorioPersonalizado = async () => {
         if (selectedColumns.length === 0) {
@@ -57,10 +59,10 @@ function CustomReportCard() {
         setProgress({ current: 0, total: 0, status: "Iniciando análise..." });
 
         try {
-            //Chamando  função do relatório personalizado passando as colunas selecionadas
             const resultado = await vehicleExportService.gerarRelatorioPersonalizado(
-                selectedColumns, // Passa o array de strings do ToggleGroup
-                (current, total, status) => setProgress({ current, total, status })
+                selectedColumns,
+                (current, total, status) => setProgress({ current, total, status }),
+                apenasAtivos
             );
 
             setResult(resultado);
@@ -167,7 +169,7 @@ function CustomReportCard() {
 
                 {/* Seletor de colunas */}
                 <div className="mt-6">
-                    <h2 className="mb-2 text-base font-semibold ">Selecione as informações desejadas:</h2>
+                    <h2 className="mb-2 text-base font-semibold">Selecione as informações desejadas:</h2>
 
                     <ToggleGroup
                         type="multiple"
@@ -179,55 +181,54 @@ function CustomReportCard() {
                     >
                         <ToggleGroupItem value="unit_Description" aria-label="Unidade"
                             className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-
                         >
                             <Locate />
                             ID da unidade
                         </ToggleGroupItem>
 
-                        <ToggleGroupItem value="vin" aria-label="Chassi" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        >
+                        <ToggleGroupItem value="vin" aria-label="Chassi" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                             <Car />
                             Chassi
                         </ToggleGroupItem>
 
-                        <ToggleGroupItem value="description" aria-label="Descrição" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        >
+                        <ToggleGroupItem value="description" aria-label="Descrição" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                             <IdCard />
                             Descrição
                         </ToggleGroupItem>
 
-                        <ToggleGroupItem value="registration" aria-label="Placa" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        >
+                        <ToggleGroupItem value="registration" aria-label="Placa" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                             <CarFront />
                             Placa
                         </ToggleGroupItem>
 
-                        {/* <ToggleGroupItem value="lastLocation" aria-label="Última localização" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        >
-                            <MapPin />
-                            Últ. localização
-                        </ToggleGroupItem> */}
-
-                        <ToggleGroupItem value="lastKnownEventUtcTimestamp" aria-label="Última atualização" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        >
+                        <ToggleGroupItem value="lastKnownEventUtcTimestamp" aria-label="Última atualização" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                             <Calendar />
                             Últ. atualização
                         </ToggleGroupItem>
 
-                        <ToggleGroupItem value="odometer" aria-label="Odômetro" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        >
+                        <ToggleGroupItem value="odometer" aria-label="Odômetro" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                             <Gauge />
                             Odômetro
                         </ToggleGroupItem>
 
-                        
-                        <ToggleGroupItem value="utcStartDate" aria-label="StartDate" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        >
-                           <CalendarCheck />
+                        <ToggleGroupItem value="utcStartDate" aria-label="StartDate" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                            <CalendarCheck />
                             Startdate
                         </ToggleGroupItem>
                     </ToggleGroup>
+
+                    {/* Filtro: somente ativos */}
+                    <div className="flex items-center gap-2 mt-4">
+                        <Switch
+                            id="switch-ativos"
+                            checked={apenasAtivos}
+                            onCheckedChange={setApenasAtivos}
+                        />
+                        <Label htmlFor="switch-ativos" className="text-sm cursor-pointer">
+                            Somente ativos
+                            <span className="ml-1 text-xs text-muted-foreground">(oculta veículos marcados como REMOVIDO)</span>
+                        </Label>
+                    </div>
                 </div>
             </Card>
 
