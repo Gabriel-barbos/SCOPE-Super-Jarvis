@@ -2,8 +2,7 @@ const axios = require('axios');
 const readline = require('readline');
 
 const API_URL = "https://live.mzoneweb.net/mzone62.api";
-const TOKEN = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjlDNTg1RjFFODkzM0Q4RDJDMkJGRjdEQkIxQkRFMjBGRTFCNjVDNUEiLCJ0eXAiOiJKV1QiLCJ4NXQiOiJuRmhmSG9rejJOTEN2X2Zic2IzaUQtRzJYRm8ifQ.eyJuYmYiOjE3NjkxMDk5ODYsImV4cCI6MTc2OTExMzU4NiwiaXNzIjoiaHR0cHM6Ly9sb2dpbi5tem9uZXdlYi5uZXQiLCJhdWQiOlsiaHR0cHM6Ly9sb2dpbi5tem9uZXdlYi5uZXQvcmVzb3VyY2VzIiwiZGktYXBpIiwibXo2LWFwaSJdLCJjbGllbnRfaWQiOiJtei1lcW1hcmFuaGFvIiwic3ViIjoiZjAwYWVjNjEtMzE2Zi00MTU1LWExZWUtOWQzYzAzM2JiYWYyIiwiYXV0aF90aW1lIjoxNzY5MTA5OTg2LCJpZHAiOiJsb2NhbCIsIm16X3VzZXJuYW1lIjoiVW5pZGFzYWRtIiwibXpfdXNlcmdyb3VwX2lkIjoiYTA4ZDMyOTctODQ5Yi00MzEzLTg0MDktNWUxODQwODZkMDIyIiwibXpfc2hhcmRfY29kZSI6IkJSQVpJTCIsInNjb3BlIjpbIm16X3VzZXJuYW1lIiwib3BlbmlkIiwiZGktYXBpLmFsbCIsIm16Ni1hcGkuYWxsIl0sImFtciI6WyJwd2QiXX0.MPgGWA9_Y1gxgHtXN9dfYyIeXDIC8OqUNQEq8WD7_3csqhtdBrxs914fJA7pePRpPWvT_k3YorWSGG_osDmYn1pEYoimvQ7bDb2LzgN2Wt_WuXZo29tXpn6kFvK2iXwokbDemOuLNC2PEY1iWLfGJTDh9PezgBPophlysuUKNkNUuoZyBrfYbg1HeM0ym71T7MqXlIe57nRr2p3-jMq4Gvj7xSm3zkUPdvZN5chrIie0SbIwqbhxI2duPdFGq_3vNgLoCKWZh2PPocpN_HyAEsPKA00eYMRMDU-OfyE2dZDG5RALMd8GZBtm8k_lbHDlaNdJDEB29Eh14rq7HNZou9WVEIIPEIjFpROYg9ml20YmW2thn1avI36wKRjD0XXPHNX28Cju_Ah6WfejakuN-dYn7Koq96VpvU9B9-t2IYMdv0jl2cCWLt_aGXsoS1h6jb5USq_XTbha1xA0fCmOP4wgrAjV6b-V3mmKjv5dtEq6M_UWiw_aWDUXSx9OHsu7UdI6_YJFDOI7Ob3Ip9x_d08qOSNsZuMKqQRrDzQJX6pE4kPrgYzX_naEqYQ39-0qDj9Z8QC_2Tt9wYOPwBJWqUZsHY3i30JxoQNAhgqpzsy936SDvcxMad2GXKeRRhjD13nsoCggktQ4PtWw2PLmQqeVQqWGUFkscMHtzxXaxu8"; 
-
+const TOKEN = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjlDNTg1RjFFODkzM0Q4RDJDMkJGRjdEQkIxQkRFMjBGRTFCNjVDNUEiLCJ0eXAiOiJKV1QiLCJ4NXQiOiJuRmhmSG9rejJOTEN2X2Zic2IzaUQtRzJYRm8ifQ.eyJuYmYiOjE3NzgyNjgyODIsImV4cCI6MTc3ODI3MTg4MiwiaXNzIjoiaHR0cHM6Ly9sb2dpbi5tem9uZXdlYi5uZXQiLCJhdWQiOlsiaHR0cHM6Ly9sb2dpbi5tem9uZXdlYi5uZXQvcmVzb3VyY2VzIiwiZGktYXBpIiwibXo2LWFwaSJdLCJjbGllbnRfaWQiOiJtei1lcW1hcmFuaGFvIiwic3ViIjoiZjAwYWVjNjEtMzE2Zi00MTU1LWExZWUtOWQzYzAzM2JiYWYyIiwiYXV0aF90aW1lIjoxNzc4MjY4MjgyLCJpZHAiOiJsb2NhbCIsIm16X3VzZXJuYW1lIjoiVW5pZGFzYWRtIiwibXpfdXNlcmdyb3VwX2lkIjoiYTA4ZDMyOTctODQ5Yi00MzEzLTg0MDktNWUxODQwODZkMDIyIiwibXpfc2hhcmRfY29kZSI6IkJSQVpJTCIsInNjb3BlIjpbIm16X3VzZXJuYW1lIiwib3BlbmlkIiwiZGktYXBpLmFsbCIsIm16Ni1hcGkuYWxsIl0sImFtciI6WyJwd2QiXX0.iCX_bs2VnJuZpIddkIWcCpxBPsgq_fp4e2NwjHnxkmDvs2fBJNCjzPqKagXq9ebnAb5uGG8wsfuSzMt9S0ijwvGugvRQMXk-iAW1_xeDuLKDF2cinmpxSxZrL14KCQunEaNaGWzV-o_NRVdLb04_cbmF3VIlbsT-gtNB5r8Sqy8fsdUbaKGhxhFctkSnG8q_YfYl1_Ype5TnrrsvLgGpd7GyzXs5BQvgQJgmbLcJ5n7JDciv5sPDQQMx7r5PujrqUh5pQXct1W2fdDJyhGb55KQqUAE6hglv-tGEhV3WWJ1agsT61FuXZXqy_qgKMmq2vOwDTfKEhPXQvRbNQnqGMKBwEc-4ewvtQd6G-YwAZ_CMRcv4VjCzj2pYWpsMH3gj-eX0Gs50-fgPiW0wZDzMRQhvtFMNDAcH8oVR-MAFquYUiTtYhyVodYO7DLacddYGUEG5tF7ZMqBzbwXbS3xYsexAq31fqs5cEAE34R9w3Pel3A6bWLi21-f61A3ENGdLgvY9bN30KtvUvq36fMu3KtAR3eq2wxQeGpqoyZsLyuwzmSwbvjJfRQLYu_Lw4YV76ivZMvvgaUw94CRUnD7jo9tf_ZTAwOwUpGQE0jqNi7oIV3TbVamD6wyv0zICxmFKFuUJPb9sHRoc9n39ymej8Ufa-M7prbQ8PFoRN5N_FDw"
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -136,11 +135,26 @@ async function lerDoTerminal() {
   return new Promise((resolve) => {
     rl.on('close', () => {
       const veiculos = lines
-        .filter(line => line.includes(','))
         .map(line => {
-          const [chassi, odometro] = line.split(',').map(s => s.trim());
-          return { chassi, odometro };
-        });
+          // Detecta separador: TAB, ponto e vírgula, vírgula ou múltiplos espaços
+          let separator = ',';
+          if (line.includes('\t')) separator = '\t';
+          else if (line.includes(';')) separator = ';';
+          else if (line.includes(',')) separator = ',';
+          else separator = /\s+/; // Fallback para qualquer espaço branco
+
+          const parts = line.split(separator).map(s => s.trim()).filter(Boolean);
+          
+          if (parts.length >= 2) {
+            return { 
+              chassi: parts[0], 
+              odometro: parts[1].replace(/[^\d.]/g, '') // Remove caracteres não numéricos do odômetro
+            };
+          }
+          return null;
+        })
+        .filter(v => v !== null);
+        
       resolve(veiculos);
     });
   });

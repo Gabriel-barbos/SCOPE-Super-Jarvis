@@ -20,6 +20,7 @@ import Motoristas from "@/pages/Drivers";
 import NotFound from "@/pages/NotFound";
 import Rotinas from "@/pages/Routines";
 import Remocao from "@/pages/Deinstallation";
+import AutoPoll from "@/pages/AutoPoll";
 
 const queryClient = new QueryClient();
 
@@ -143,6 +144,16 @@ const App = () => (
                     <ProtectedRoute>
                       <Layout>
                         <Remocao />
+                      </Layout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/poll"
+                  element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <AutoPoll />
                       </Layout>
                     </ProtectedRoute>
                   }

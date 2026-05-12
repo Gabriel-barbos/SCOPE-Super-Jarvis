@@ -1,4 +1,4 @@
-import { Car, Brain, CalendarClock, FolderPlus, IdCard, FolderMinus, OctagonX, UserCheck, Home, ChevronDown, ClipboardPen, UserPlus, UserMinus, Share2, Trash2, Bot } from "lucide-react"
+import { Car, Brain, CalendarClock, FolderPlus, IdCard, FolderMinus, OctagonX, UserCheck, Home, ChevronDown, ClipboardPen, UserPlus, UserMinus, Share2, Trash2, Bot, Radio } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 import { useState } from "react"
 import { LogoutButton } from "./LogoutButton"
@@ -49,6 +49,11 @@ const items = [
     title: "Remoção",
     url: "/deinstallation",
     icon: OctagonX
+  },
+  {
+    title: "Auto Poll",
+    url: "/poll",
+    icon: Radio
   },
 ]
 
