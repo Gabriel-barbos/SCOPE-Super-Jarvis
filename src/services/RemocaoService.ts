@@ -83,12 +83,13 @@ async function buscarVeiculo(
 //mudar descrição
 async function marcarVeiculoComoRemovido(
   vehicleId: string,
-  currentDescription: string
+  currentDescription: string,
+  prefix: string = "REMOVIDO"
 ): Promise<boolean> {
   try {
-    const novaDescricao = currentDescription.startsWith("REMOVIDO - ")
+    const novaDescricao = currentDescription.startsWith(`${prefix} - `)
       ? currentDescription
-      : `REMOVIDO - ${currentDescription}`;
+      : `${prefix} - ${currentDescription}`;
 
     await proxyApi.post(
       "/proxy",
@@ -105,10 +106,10 @@ async function marcarVeiculoComoRemovido(
       }
     );
 
-    console.log(`Veículo ${vehicleId} marcado como REMOVIDO`);
+    console.log(`Veículo ${vehicleId} marcado como ${prefix}`);
     return true;
   } catch (err: any) {
-    console.error(` Erro ao marcar veículo como removido:`, err.response?.data || err.message);
+    console.error(` Erro ao marcar veículo como ${prefix}:`, err.response?.data || err.message);
     return false;
   }
 }
@@ -187,6 +188,7 @@ async function moverVeiculoParaGrupo(vehicleId: string, grupoId: string): Promis
 interface RemocaoOptions {
   removerDeGrupos?: boolean;
   moverParaGrupoId?: string;
+  prefix?: string;
 }
 
 async function processarRemocaoEmLote(
@@ -216,7 +218,8 @@ async function processarRemocaoEmLote(
 
     try {
       // Atualiza descrição
-      await marcarVeiculoComoRemovido(vehicle.id, vehicle.description);
+      const prefixToUse = options.prefix || "REMOVIDO";
+      await marcarVeiculoComoRemovido(vehicle.id, vehicle.description, prefixToUse);
 
       //Remove de grupos se solicitado
       if (options.removerDeGrupos) {

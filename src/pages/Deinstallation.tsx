@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 import SelectGroup from "../components/share/SelectGroup";
 import ConfirmModal from "../components/share/ConfirmModal";
@@ -33,6 +34,7 @@ export default function Remocao() {
     // Opções de remoção
     const [removerDeGrupos, setRemoverDeGrupos] = useState(false);
     const [moverParaGrupo, setMoverParaGrupo] = useState(false);
+    const [prefix, setPrefix] = useState("REMOVIDO");
 
     const [processing, setProcessing] = useState(false);
     const [progress, setProgress] = useState<ProgressState>({
@@ -84,6 +86,7 @@ export default function Remocao() {
                 {
                     removerDeGrupos,
                     moverParaGrupoId: moverParaGrupo ? selectedGroup?.id : undefined,
+                    prefix: prefix || "REMOVIDO",
                 },
                 (sent, total, currentResult) => {
                     setProgress((prev) => ({
@@ -113,6 +116,7 @@ export default function Remocao() {
         setSelectedGroup(null);
         setRemoverDeGrupos(false);
         setMoverParaGrupo(false);
+        setPrefix("REMOVIDO");
         setProgress({ sent: 0, total: 0, success: 0, errors: [] });
         setShowResultModal(false);
     };
@@ -188,6 +192,24 @@ export default function Remocao() {
                                 <span className="text-sm text-foreground">ID do dispositivo</span>
                             </label>
                         </div>
+                    </div>
+
+                    {/* Prefixo de Remoção */}
+                    <div className="space-y-2">
+                        <Label htmlFor="prefix">TAG</Label>
+                        <Input
+                            id="prefix"
+                            value={prefix}
+                            onChange={(e) => setPrefix(e.target.value)}
+                            list="prefix-options"
+                            placeholder="Ex: REMOVIDO, CANCELADO V, DESATIVADO"
+                            disabled={processing}
+                        />
+                        <datalist id="prefix-options">
+                            <option value="REMOVIDO" />
+                            <option value="CANCELADO V" />
+                            <option value="DESATIVADO" />
+                        </datalist>
                     </div>
 
                     {/* <div className="flex items-center justify-between">

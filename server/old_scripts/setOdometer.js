@@ -2,13 +2,81 @@ const axios = require('axios');
 const readline = require('readline');
 
 const API_URL = "https://live.mzoneweb.net/mzone62.api";
-const TOKEN = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjlDNTg1RjFFODkzM0Q4RDJDMkJGRjdEQkIxQkRFMjBGRTFCNjVDNUEiLCJ0eXAiOiJKV1QiLCJ4NXQiOiJuRmhmSG9rejJOTEN2X2Zic2IzaUQtRzJYRm8ifQ.eyJuYmYiOjE3NzgyNjgyODIsImV4cCI6MTc3ODI3MTg4MiwiaXNzIjoiaHR0cHM6Ly9sb2dpbi5tem9uZXdlYi5uZXQiLCJhdWQiOlsiaHR0cHM6Ly9sb2dpbi5tem9uZXdlYi5uZXQvcmVzb3VyY2VzIiwiZGktYXBpIiwibXo2LWFwaSJdLCJjbGllbnRfaWQiOiJtei1lcW1hcmFuaGFvIiwic3ViIjoiZjAwYWVjNjEtMzE2Zi00MTU1LWExZWUtOWQzYzAzM2JiYWYyIiwiYXV0aF90aW1lIjoxNzc4MjY4MjgyLCJpZHAiOiJsb2NhbCIsIm16X3VzZXJuYW1lIjoiVW5pZGFzYWRtIiwibXpfdXNlcmdyb3VwX2lkIjoiYTA4ZDMyOTctODQ5Yi00MzEzLTg0MDktNWUxODQwODZkMDIyIiwibXpfc2hhcmRfY29kZSI6IkJSQVpJTCIsInNjb3BlIjpbIm16X3VzZXJuYW1lIiwib3BlbmlkIiwiZGktYXBpLmFsbCIsIm16Ni1hcGkuYWxsIl0sImFtciI6WyJwd2QiXX0.iCX_bs2VnJuZpIddkIWcCpxBPsgq_fp4e2NwjHnxkmDvs2fBJNCjzPqKagXq9ebnAb5uGG8wsfuSzMt9S0ijwvGugvRQMXk-iAW1_xeDuLKDF2cinmpxSxZrL14KCQunEaNaGWzV-o_NRVdLb04_cbmF3VIlbsT-gtNB5r8Sqy8fsdUbaKGhxhFctkSnG8q_YfYl1_Ype5TnrrsvLgGpd7GyzXs5BQvgQJgmbLcJ5n7JDciv5sPDQQMx7r5PujrqUh5pQXct1W2fdDJyhGb55KQqUAE6hglv-tGEhV3WWJ1agsT61FuXZXqy_qgKMmq2vOwDTfKEhPXQvRbNQnqGMKBwEc-4ewvtQd6G-YwAZ_CMRcv4VjCzj2pYWpsMH3gj-eX0Gs50-fgPiW0wZDzMRQhvtFMNDAcH8oVR-MAFquYUiTtYhyVodYO7DLacddYGUEG5tF7ZMqBzbwXbS3xYsexAq31fqs5cEAE34R9w3Pel3A6bWLi21-f61A3ENGdLgvY9bN30KtvUvq36fMu3KtAR3eq2wxQeGpqoyZsLyuwzmSwbvjJfRQLYu_Lw4YV76ivZMvvgaUw94CRUnD7jo9tf_ZTAwOwUpGQE0jqNi7oIV3TbVamD6wyv0zICxmFKFuUJPb9sHRoc9n39ymej8Ufa-M7prbQ8PFoRN5N_FDw"
+
+// Configurações do Token
+const LOGIN = "Unidasadm"; // Preencha o login
+const PASSWORD = "Unidasadm@1qaz"; // Preencha a senha
+const CLIENT_ID = 'mz-eqmaranhao';
+const CLIENT_SECRET = 'G8PcqkHikp%BUejsv.C!^wzr';
+const TOKEN_LIFETIME_MS = 50 * 60 * 1000; // 50 minutos
+
+class TokenManager {
+  constructor({ login, password }) {
+    this.login = login;
+    this.password = password;
+    this.token = null;
+    this.createdAt = null;
+    this.refreshCount = 0;
+  }
+
+  isExpired() {
+    if (!this.token || !this.createdAt) return true;
+    return Date.now() - this.createdAt > TOKEN_LIFETIME_MS;
+  }
+
+  async getToken() {
+    if (this.isExpired()) {
+      console.log(`\n[TokenManager] ${this.token ? 'Renovando' : 'Gerando'} token...`);
+
+      const params = new URLSearchParams();
+      params.append('client_id', CLIENT_ID);
+      params.append('client_secret', CLIENT_SECRET);
+      params.append('username', this.login);
+      params.append('Password', this.password);
+      params.append('grant_type', 'password');
+      params.append('response_type', 'code id token');
+
+      try {
+        const response = await axios.post('https://login.mzoneweb.net/connect/token', params.toString(), {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          }
+        });
+
+        this.token = response.data.access_token;
+        this.createdAt = Date.now();
+
+        if (this.refreshCount > 0) {
+          console.log(`[TokenManager] Token renovado (refresh #${this.refreshCount})\n`);
+        } else {
+          console.log(`[TokenManager] Token gerado com sucesso.\n`);
+        }
+        this.refreshCount++;
+      } catch (error) {
+         throw new Error(`Erro ao gerar token para ${this.login}: ${error.response?.data ? JSON.stringify(error.response.data) : error.message}`);
+      }
+    }
+
+    return this.token;
+  }
+}
+
+const tokenManager = new TokenManager({ login: LOGIN, password: PASSWORD });
+
 const api = axios.create({
   baseURL: API_URL,
   headers: {
-    Authorization: `Bearer ${TOKEN}`,
     "Content-Type": "application/json",
   },
+});
+
+// Interceptor para adicionar o token automaticamente em cada requisição
+api.interceptors.request.use(async (config) => {
+  const token = await tokenManager.getToken();
+  config.headers.Authorization = `Bearer ${token}`;
+  return config;
+}, (error) => {
+  return Promise.reject(error);
 });
 
 // Sanitiza strings para OData
