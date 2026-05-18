@@ -76,27 +76,30 @@ const CONFIG = {
 //aux functions
 
 /**
- * Formata data UTC para formato brasileiro com hora
+ * Converte data UTC para número serial do Excel (data real) ajustado para UTC-3 (São Paulo).
+ * O Excel armazena datas como número de dias desde 1900-01-01.
+ * Retornar um número em vez de string faz o Excel reconhecer a célula como data,
+ * permitindo filtros, ordenação e formatação de data nativamente.
  * @param utcDate - Data no formato ISO 8601 UTC
- * @returns String formatada como "DD/MM/YYYY HH:mm:ss" no fuso de São Paulo
+ * @returns Número serial do Excel ou string vazia se inválido
  */
-function formatarDataHora(utcDate: string | undefined | null): string {
+function utcParaSerialExcel(utcDate: string | undefined | null): number | '' {
   if (!utcDate) return '';
-  
+
   try {
     const date = new Date(utcDate);
-    
-    const localDate = new Date(date.getTime() + CONFIG.TIMEZONE_OFFSET * 60 * 60 * 1000);
-    const dia = localDate.getUTCDate().toString().padStart(2, '0');
-    const mes = (localDate.getUTCMonth() + 1).toString().padStart(2, '0');
-    const ano = localDate.getUTCFullYear();
-    const hora = localDate.getUTCHours().toString().padStart(2, '0');
-    const minuto = localDate.getUTCMinutes().toString().padStart(2, '0');
-    const segundo = localDate.getUTCSeconds().toString().padStart(2, '0');
-    
-    return `${dia}/${mes}/${ano} ${hora}:${minuto}:${segundo}`;
+    if (isNaN(date.getTime())) return '';
+
+    // Ajusta para UTC-3 (São Paulo)
+    const localMs = date.getTime() + CONFIG.TIMEZONE_OFFSET * 60 * 60 * 1000;
+
+    // Époco do Excel: 1900-01-01 (com ajuste do bug do ano bissexto 1900)
+    const EXCEL_EPOCH_MS = Date.UTC(1899, 11, 30); // 30/12/1899
+    const serialDias = (localMs - EXCEL_EPOCH_MS) / (24 * 60 * 60 * 1000);
+
+    return serialDias;
   } catch (error) {
-    console.error('Erro ao formatar data:', error);
+    console.error('Erro ao converter data para serial Excel:', error);
     return '';
   }
 }
@@ -193,11 +196,11 @@ async function buscarTodosVeiculos(
 // DATA FORMATTING
 
 function formatarValorCampo(campo: CampoKey, valor: any): any {
-  // Campos de data precisam de formatação especial
+  // Campos de data: retorna número serial do Excel para que o Excel reconheça como data real
   if (campo === 'ultimoReport' || campo === 'dataInicio') {
-    return formatarDataHora(valor);
+    return utcParaSerialExcel(valor);
   }
-  
+
   // Retorna valor padrão ou vazio
   return valor !== undefined && valor !== null ? valor : '';
 }
@@ -225,6 +228,10 @@ function formatarDados(
 }
 
 // EXCEL GENERATION
+
+/** Formato de exibição de data/hora no Excel (padrão brasileiro) */
+const EXCEL_DATE_FORMAT = 'DD/MM/YYYY HH:mm:ss';
+
 function gerarExcel(
   dados: Record<string, any>[],
   campos: CampoKey[],
@@ -236,6 +243,32 @@ function gerarExcel(
   worksheet["!cols"] = campos.map(campo => ({
     wch: CAMPOS[campo]?.width || 20
   }));
+
+  // Aplica formato de data nas colunas de data para que o Excel exiba corretamente
+  // e permita filtros/ordenação por data
+  const campoDatas: CampoKey[] = ['ultimoReport', 'dataInicio'];
+  const headers = XLSX.utils.sheet_to_json<string[]>(worksheet, { header: 1 })[0] as string[];
+
+  if (headers && dados.length > 0) {
+    campoDatas.forEach(campoDt => {
+      if (!campos.includes(campoDt)) return;
+      const label = CAMPOS[campoDt].label;
+      const colIdx = headers.indexOf(label);
+      if (colIdx === -1) return;
+
+      const colLetter = XLSX.utils.encode_col(colIdx);
+
+      // Aplica o formato de célula de data em todas as linhas de dados (começa na linha 2)
+      for (let rowIdx = 1; rowIdx <= dados.length; rowIdx++) {
+        const cellAddress = `${colLetter}${rowIdx + 1}`;
+        const cell = worksheet[cellAddress];
+        if (cell && cell.v !== '' && cell.v !== undefined) {
+          cell.t = 'n'; // tipo numérico (serial de data)
+          cell.z = EXCEL_DATE_FORMAT; // formato de exibição
+        }
+      }
+    });
+  }
 
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Veículos");
