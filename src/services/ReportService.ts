@@ -2,6 +2,10 @@ import proxyApi from "./proxyApi";
 import * as XLSX from "xlsx";
 
 //types
+interface LastKnownSimInformation {
+  iccid?: string;
+}
+
 interface Vehicle {
   id?: string;
   vin?: string;
@@ -11,6 +15,7 @@ interface Vehicle {
   odometer?: number;
   lastKnownEventUtcTimestamp?: string;
   utcStartDate?: string;
+  lastKnownSimInformation?: LastKnownSimInformation | null;
 }
 
 interface ProgressCallback {
@@ -33,7 +38,8 @@ const CAMPOS = {
   placa: { key: 'registration', label: 'Placa', width: 15 },
   odometro: { key: 'odometer', label: 'Odômetro', width: 15 },
   ultimoReport: { key: 'lastKnownEventUtcTimestamp', label: 'Último Report', width: 22 },
-  dataInicio: { key: 'utcStartDate', label: 'Data de Início', width: 22 }
+  dataInicio: { key: 'utcStartDate', label: 'Data de Início', width: 22 },
+  iccid: { key: 'iccid', label: 'Nº SIM (ICCID)', width: 25 }
 } as const;
 
 const CAMPOS_PADRAO: CampoKey[] = ['chassi', 'descricao', 'unidade', 'placa'];
@@ -46,7 +52,18 @@ const CAMPO_MAP: Record<string, CampoKey> = {
   'registration': 'placa',
   'odometer': 'odometro',
   'lastKnownEventUtcTimestamp': 'ultimoReport',
-  'utcStartDate': 'dataInicio'
+  'utcStartDate': 'dataInicio',
+  'iccid': 'iccid'
+};
+
+const API_SELECT: Partial<Record<CampoKey, string>> = {
+  chassi: 'vin',
+  descricao: 'description',
+  unidade: 'unit_Description',
+  placa: 'registration',
+  odometro: 'odometer',
+  ultimoReport: 'lastKnownEventUtcTimestamp',
+  dataInicio: 'utcStartDate',
 };
 
 const CONFIG = {
@@ -96,12 +113,44 @@ function gerarNomeArquivo(prefixo: string): string {
  //Aguarda um tempo determinado
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+function montarQueryOData(campos?: CampoKey[], filtrarAtivos = false): string {
+  if (!campos?.length) return '';
 
+  const selectFields = campos
+    .map(campo => API_SELECT[campo])
+    .filter((field): field is string => Boolean(field));
+
+  if (filtrarAtivos && !selectFields.includes('description')) {
+    selectFields.push('description');
+  }
+
+  const params: string[] = [];
+
+  if (selectFields.length > 0) {
+    params.push(`$select=${selectFields.join(',')}`);
+  }
+
+  if (campos.includes('iccid')) {
+    params.push('$expand=lastKnownSimInformation($select=iccid)');
+  }
+
+  return params.length ? `&${params.join('&')}` : '';
+}
+
+function obterValorCampo(veiculo: Vehicle, campo: CampoKey): unknown {
+  if (campo === 'iccid') {
+    return veiculo.lastKnownSimInformation?.iccid;
+  }
+
+  const config = CAMPOS[campo];
+  return (veiculo as Record<string, unknown>)[config.key];
+}
 
 //API CALLS
 async function buscarTodosVeiculos(
   onProgress?: ProgressCallback,
-  filtrarAtivos = false
+  filtrarAtivos = false,
+  campos?: CampoKey[]
 ): Promise<Vehicle[]> {
   const veiculos: Vehicle[] = [];
   const token = localStorage.getItem("token");
@@ -117,7 +166,7 @@ async function buscarTodosVeiculos(
     const response = await proxyApi.post(
       "/proxy",
       {
-        path: `/Vehicles?$top=${CONFIG.PAGE_SIZE}&$skip=${skip}`,
+        path: `/Vehicles?$top=${CONFIG.PAGE_SIZE}&$skip=${skip}${montarQueryOData(campos, filtrarAtivos)}`,
         method: "GET",
       },
       {
@@ -167,7 +216,7 @@ function formatarDados(
       const config = CAMPOS[campo];
       if (!config) return;
 
-      const valor = (veiculo as any)[config.key];
+      const valor = obterValorCampo(veiculo, campo);
       linha[config.label] = formatarValorCampo(campo, valor);
     });
 
@@ -265,7 +314,7 @@ async function gerarRelatorioPersonalizado(
     const nomeArquivo = gerarNomeArquivo('Relatorio_Personalizado');
 
     onProgress?.(0, 0, "Iniciando exportação personalizada...");
-    const veiculos = await buscarTodosVeiculos(onProgress, filtrarAtivos);
+    const veiculos = await buscarTodosVeiculos(onProgress, filtrarAtivos, camposSelecionados);
 
     onProgress?.(veiculos.length, veiculos.length, "Formatando dados...");
     const dados = formatarDados(veiculos, camposSelecionados);

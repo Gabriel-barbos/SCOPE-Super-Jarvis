@@ -11,7 +11,8 @@ import {
     CarFront,
     Calendar,
     Gauge,
-    CalendarCheck
+    CalendarCheck,
+    Cpu,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -214,6 +215,11 @@ function CustomReportCard() {
                         <ToggleGroupItem value="utcStartDate" aria-label="StartDate" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                             <CalendarCheck />
                             Startdate
+                        </ToggleGroupItem>
+
+                        <ToggleGroupItem value="iccid" aria-label="ICCID" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                            <Cpu />
+                            Nº SIM CARD
                         </ToggleGroupItem>
                     </ToggleGroup>
 
