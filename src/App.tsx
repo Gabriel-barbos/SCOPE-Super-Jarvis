@@ -22,6 +22,7 @@ import Rotinas from "@/pages/Routines";
 import Remocao from "@/pages/Deinstallation";
 import AutoPoll from "@/pages/AutoPoll";
 
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -158,6 +159,7 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
+      
 
                 {/* Rota 404 */}
                 <Route path="*" element={<NotFound />} />

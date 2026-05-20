@@ -15,6 +15,7 @@ import {
   Loader2,
   CalendarClock,
   Download,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +34,7 @@ import { useToast } from "@/hooks/use-toast";
 
 import {
   pollService,
+  type MaintenanceRevalidateResult,
   type PollStatus,
   type PollVehicle,
 } from "@/services/PollService";
@@ -49,6 +51,8 @@ import { AutoPollTabs } from "@/components/autopoll/AutoPollTabs";
 
 
 const MAINT_PER_PAGE = 8;
+const VEHICLE_HISTORY_LIMIT = 50;
+const REVALIDATE_LIMIT = 500;
 
 
 export default function AutoPoll() {
@@ -77,6 +81,17 @@ export default function AutoPoll() {
 
   const [isRunDialogOpen, setIsRunDialogOpen] = useState(false);
 
+  const [vehicleHistory, setVehicleHistory] = useState<PollVehicle[]>([]);
+  const [vehicleHistoryTotal, setVehicleHistoryTotal] = useState(0);
+  const [vehicleHistoryPage, setVehicleHistoryPage] = useState(1);
+  const [vehicleHistoryTotalPages, setVehicleHistoryTotalPages] = useState(1);
+  const [vehicleHistoryStatus, setVehicleHistoryStatus] = useState("all");
+  const [loadingVehicleHistory, setLoadingVehicleHistory] = useState(true);
+
+  const [revalidating, setRevalidating] = useState(false);
+  const [revalidatePreview, setRevalidatePreview] =
+    useState<MaintenanceRevalidateResult | null>(null);
+
   const [tick, setTick] = useState(0);
 
   const fetchStatus = useCallback(async () => {
@@ -103,9 +118,9 @@ export default function AutoPoll() {
 
   const fetchMaintenance = useCallback(async () => {
     try {
-      const data = await pollService.getMaintenance();
+      const data = await pollService.getMaintenance({ limit: 500 });
       setMaintenance(data.items ?? []);
-      setMaintenanceCount(data.count ?? 0);
+      setMaintenanceCount(data.pagination?.total ?? data.count ?? 0);
     } catch {
       toast({ title: "Erro ao carregar manutenções", variant: "destructive" });
     } finally {
@@ -113,11 +128,36 @@ export default function AutoPoll() {
     }
   }, [toast]);
 
+  const fetchVehicleHistory = useCallback(async () => {
+    try {
+      const params: { page: number; limit: number; status?: string } = {
+        page: vehicleHistoryPage,
+        limit: VEHICLE_HISTORY_LIMIT,
+      };
+      if (vehicleHistoryStatus !== "all") {
+        params.status = vehicleHistoryStatus;
+      }
+      const data = await pollService.getHistory(params);
+      setVehicleHistory(data.items ?? []);
+      setVehicleHistoryTotal(data.count ?? 0);
+      setVehicleHistoryTotalPages(data.totalPages ?? 1);
+    } catch {
+      toast({ title: "Erro ao carregar histórico de veículos", variant: "destructive" });
+    } finally {
+      setLoadingVehicleHistory(false);
+    }
+  }, [toast, vehicleHistoryPage, vehicleHistoryStatus]);
+
   useEffect(() => {
     fetchStatus();
     fetchExecutions();
     fetchMaintenance();
   }, [fetchStatus, fetchExecutions, fetchMaintenance, tick]);
+
+  useEffect(() => {
+    setLoadingVehicleHistory(true);
+    fetchVehicleHistory();
+  }, [fetchVehicleHistory, tick]);
 
   // Auto-refresh every 30 s while running
   useEffect(() => {
@@ -188,7 +228,45 @@ export default function AutoPoll() {
     setLoadingStatus(true);
     setLoadingExec(true);
     setLoadingMaint(true);
+    setLoadingVehicleHistory(true);
     setTick((t) => t + 1);
+  }
+
+  async function handleRevalidateDryRun() {
+    setRevalidating(true);
+    try {
+      const result = await pollService.revalidateMaintenance({
+        limit: REVALIDATE_LIMIT,
+        dryRun: true,
+      });
+      setRevalidatePreview(result);
+    } catch {
+      toast({ title: "Erro na simulação de revalidação", variant: "destructive" });
+    } finally {
+      setRevalidating(false);
+    }
+  }
+
+  async function handleRevalidateConfirm() {
+    setRevalidating(true);
+    try {
+      const result = await pollService.revalidateMaintenance({
+        limit: REVALIDATE_LIMIT,
+        dryRun: false,
+      });
+      setRevalidatePreview(result);
+      toast({
+        title: "Revalidação concluída",
+        description: `${result.ignored} veículo(s) movido(s) para Ignorado.`,
+      });
+      fetchMaintenance();
+      setLoadingVehicleHistory(true);
+      setTick((t) => t + 1);
+    } catch {
+      toast({ title: "Erro ao revalidar manutenções", variant: "destructive" });
+    } finally {
+      setRevalidating(false);
+    }
   }
 
   async function handleExport() {
@@ -407,7 +485,7 @@ export default function AutoPoll() {
 
       {/* ── Metrics row ── */}
       {last && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <MetricCard
             label="Veículos Analisados"
             value={last.totalScanned}
@@ -433,6 +511,12 @@ export default function AutoPoll() {
             iconColor="text-green-400"
           />
           <MetricCard
+            label="Ignorados"
+            value={last.totalIgnored ?? 0}
+            icon={<EyeOff className="w-5 h-5" />}
+            iconColor="text-slate-400"
+          />
+          <MetricCard
             label="Erros"
             value={last.totalErrors}
             icon={<AlertTriangle className="w-5 h-5" />}
@@ -445,6 +529,7 @@ export default function AutoPoll() {
       <AutoPollTabs
         loadingExec={loadingExec}
         loadingMaint={loadingMaint}
+        loadingVehicleHistory={loadingVehicleHistory}
         executions={executions}
         maintenanceCount={maintenanceCount}
         maintSearch={maintSearch}
@@ -454,6 +539,18 @@ export default function AutoPoll() {
         maintPageItems={maintPageItems}
         filteredMaintCount={filteredMaint.length}
         maintTotalPages={maintTotalPages}
+        vehicleHistory={vehicleHistory}
+        vehicleHistoryTotal={vehicleHistoryTotal}
+        vehicleHistoryPage={vehicleHistoryPage}
+        vehicleHistoryTotalPages={vehicleHistoryTotalPages}
+        vehicleHistoryStatus={vehicleHistoryStatus}
+        setVehicleHistoryStatus={setVehicleHistoryStatus}
+        setVehicleHistoryPage={setVehicleHistoryPage}
+        revalidating={revalidating}
+        revalidatePreview={revalidatePreview}
+        setRevalidatePreview={setRevalidatePreview}
+        onRevalidateDryRun={handleRevalidateDryRun}
+        onRevalidateConfirm={handleRevalidateConfirm}
         resetTarget={resetTarget}
         setResetTarget={setResetTarget}
         resetting={resetting}

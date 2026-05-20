@@ -39,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   
   const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const refreshTokenRef = useRef<(() => Promise<void>) | null>(null);
 
   // Função para gerar/renovar token
   const gerarToken = useCallback(async (cliente: Cliente): Promise<{ token: string; expiresAt: Date }> => {
@@ -91,18 +92,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const tempoParaRefresh = expiraEm - agora - REFRESH_BEFORE;
 
     if (tempoParaRefresh > 0) {
-      console.log(`Refresh agendado para: ${new Date(agora + tempoParaRefresh).toLocaleTimeString()}`);
+      console.log(`[AuthService] Refresh agendado para: ${new Date(agora + tempoParaRefresh).toLocaleTimeString()}`);
       
       refreshTimerRef.current = setTimeout(() => {
-        console.log("Iniciando refresh automático do token...");
-        refreshToken();
+        console.log("[AuthService] Iniciando refresh automático do token...");
+        refreshTokenRef.current?.();
       }, tempoParaRefresh);
     } else {
       // Token já expirou ou vai expirar muito em breve
-      console.warn("Token expirando em breve, renovando imediatamente...");
-      refreshToken();
+      console.warn("[AuthService] Token expirando em breve, renovando imediatamente...");
+      refreshTimerRef.current = setTimeout(() => {
+        refreshTokenRef.current?.();
+      }, 0);
     }
-  }, []);
+  }, [limparRefreshTimer]);
 
   // Função para renovar o token
   const refreshToken = useCallback(async () => {
@@ -131,12 +134,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Em caso de erro, tenta novamente em 30 segundos
       refreshTimerRef.current = setTimeout(() => {
         console.log(" Tentando renovar token novamente...");
-        refreshToken();
+        refreshTokenRef.current?.();
       }, 30000);
     } finally {
       setIsRefreshing(false);
     }
   }, [clienteAtivo, isRefreshing, gerarToken, salvarNoStorage, agendarRefresh]);
+
+  // Sincroniza a referência da função de refresh para evitar stale closure no timer
+  useEffect(() => {
+    refreshTokenRef.current = refreshToken;
+  }, [refreshToken]);
 
   // Recupera cliente/token do localStorage ao iniciar
   useEffect(() => {
@@ -174,6 +182,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       limparRefreshTimer();
     };
   }, [limparRefreshTimer]);
+
+  // Escuta o evento customizado disparado pelos interceptores do Axios
+  useEffect(() => {
+    const handleTokenRefreshed = (e: Event) => {
+      const customEvent = e as CustomEvent<{ token: string; expiresAt: Date | string }>;
+      const { token: novoToken, expiresAt: novaExpiracaoStr } = customEvent.detail;
+      const novaExpiracao = new Date(novaExpiracaoStr);
+      
+      console.log("[AuthService] Sincronizando estado do React com o token renovado pelo interceptor");
+      setToken(novoToken);
+      setTokenExpiresAt(novaExpiracao);
+      
+      // Reagenda o refresh automático baseado no novo vencimento
+      agendarRefresh(novaExpiracao);
+    };
+
+    window.addEventListener("tokenRefreshed", handleTokenRefreshed);
+    return () => {
+      window.removeEventListener("tokenRefreshed", handleTokenRefreshed);
+    };
+  }, [agendarRefresh]);
 
   // Seleciona cliente e gera token
   const selecionarCliente = useCallback(async (cliente: Cliente) => {

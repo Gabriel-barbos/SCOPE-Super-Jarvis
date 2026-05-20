@@ -200,6 +200,7 @@ function CustomReportCard() {
                         <ToggleGroupItem value="registration" aria-label="Placa" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                             <CarFront />
                             Placa
+                                           
                         </ToggleGroupItem>
 
                         <ToggleGroupItem value="lastKnownEventUtcTimestamp" aria-label="Última atualização" className="data-[state=on]:bg-blue-700 data-[state=on]:text-white-700 data-[state=on]:*:[svg]:fill-red-500 data-[state=on]:*:[svg]:stroke-red-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">

@@ -210,4 +210,18 @@
   .transition-fast {
     transition: var(--transition-fast);
   }
+
+  /* Custom styles for stylized buttons */
+  .clip-path-cyber {
+    clip-path: polygon(10px 0%, 100% 0%, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0% 100%, 0% 10px);
+  }
 }
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}

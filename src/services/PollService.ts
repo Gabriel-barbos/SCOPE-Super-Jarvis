@@ -15,10 +15,13 @@ export interface PollExecution {
   totalSkipped: number;
   totalNewMaintenance: number;
   totalRecovered: number;
+  totalIgnored?: number;
   totalErrors: number;
   tokenRefreshCount: number;
   pagesProcessed: number;
 }
+
+export type PollVehicleStatus = "pending" | "recovered" | "maintenance" | "ignored";
 
 export interface PollStatus {
   isRunning: boolean;
@@ -32,11 +35,14 @@ export interface PollVehicle {
   vehicleId: string;
   vin: string;
   description: string;
-  status: "pending" | "recovered" | "maintenance";
+  status: PollVehicleStatus;
   totalAttempts: number;
   lastPollDate?: string;
   lastSeenOffline?: string;
   flaggedAt?: string;
+  ignoredAt?: string;
+  ignoredReason?: string;
+  lastMaintenanceRevalidatedAt?: string;
   attempts: {
     date: string;
     executionId: string;
@@ -54,6 +60,22 @@ export interface PollHistoryResponse {
 export interface MaintenanceResponse {
   count: number;
   items: PollVehicle[];
+  pagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+  };
+}
+
+export interface MaintenanceRevalidateResult {
+  dryRun: boolean;
+  limit: number;
+  checked: number;
+  ignored: number;
+  stillMaintenance: number;
+  notFoundOrError: number;
+  sampleIgnored: PollVehicle[];
 }
 
 // ── API calls ─────────────────────────────────────────────────────────────────
@@ -74,8 +96,18 @@ export const pollService = {
     proxyApi.get("/poll/history", { params }).then((r) => r.data),
 
   /** GET /poll/history/maintenance */
-  getMaintenance: (): Promise<MaintenanceResponse> =>
-    proxyApi.get("/poll/history/maintenance").then((r) => r.data),
+  getMaintenance: (
+    params: { page?: number; limit?: number } = {}
+  ): Promise<MaintenanceResponse> =>
+    proxyApi.get("/poll/history/maintenance", { params }).then((r) => r.data),
+
+  /** POST /poll/history/maintenance/revalidate */
+  revalidateMaintenance: (
+    params: { limit?: number; dryRun?: boolean } = {}
+  ): Promise<MaintenanceRevalidateResult> =>
+    proxyApi
+      .post("/poll/history/maintenance/revalidate", null, { params })
+      .then((r) => r.data),
 
   /** POST /poll/run */
   run: (): Promise<{ message: string; status: string }> =>
