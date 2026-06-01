@@ -16,6 +16,7 @@ import {
   CalendarClock,
   Download,
   EyeOff,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
 import {
@@ -48,6 +56,7 @@ import {
   fmtDuration,
 } from "@/components/autopoll/AutoPollHelpers";
 import { AutoPollTabs } from "@/components/autopoll/AutoPollTabs";
+import { AutoPollHelpDialog } from "@/components/autopoll/AutoPollHelpDialog";
 
 
 const MAINT_PER_PAGE = 8;
@@ -63,6 +72,7 @@ export default function AutoPoll() {
   const [executions, setExecutions] = useState<import("@/services/PollService").PollExecution[]>([]);
   const [maintenance, setMaintenance] = useState<PollVehicle[]>([]);
   const [maintenanceCount, setMaintenanceCount] = useState(0);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [loadingExec, setLoadingExec] = useState(true);
@@ -338,6 +348,16 @@ export default function AutoPoll() {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => setIsHelpOpen(true)}
+              className="gap-2 border-blue-500/20 text-blue-400 hover:bg-blue-500/10 hover:border-blue-500/30"
+            >
+              <HelpCircle className="w-4 h-4" />
+              
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleExport}
               disabled={exporting}
               className="gap-2 text-muted-foreground"
@@ -581,6 +601,9 @@ export default function AutoPoll() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── Help Dialog ── */}
+      <AutoPollHelpDialog open={isHelpOpen} onOpenChange={setIsHelpOpen} />
     </div>
   );
 }
