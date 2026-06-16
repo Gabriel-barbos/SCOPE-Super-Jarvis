@@ -1,4 +1,4 @@
-import { Car, Brain, CalendarClock, FolderPlus, IdCard, FolderMinus, OctagonX, UserCheck, Home, ChevronDown, ClipboardPen, UserPlus, UserMinus, Share2, Trash2, Bot, Radio } from "lucide-react"
+import { Car, Brain, CalendarClock, FolderPlus, IdCard, FolderMinus, OctagonX, UserCheck, Home, ChevronDown, ClipboardPen, UserPlus, UserMinus, Share2, Trash2, Bot, Radio, Gauge } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 import { useState } from "react"
 import { LogoutButton } from "./LogoutButton"
@@ -82,6 +82,11 @@ const vehicleSubItems = [
     title: "Deletar veículos",
     url: "/vehicles/delete",
     icon: Trash2
+  },
+  {
+    title: "Ajuste de odômetro",
+    url: "/vehicles/odometer",
+    icon: Gauge
   },
 ]
 

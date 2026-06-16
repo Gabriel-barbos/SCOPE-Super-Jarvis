@@ -35,6 +35,8 @@ export interface PollVehicle {
   vehicleId: string;
   vin: string;
   description: string;
+  account?: string;
+  accountName?: string;
   status: PollVehicleStatus;
   totalAttempts: number;
   lastPollDate?: string;
@@ -68,14 +70,30 @@ export interface MaintenanceResponse {
   };
 }
 
-export interface MaintenanceRevalidateResult {
-  dryRun: boolean;
-  limit: number;
+export interface AccountRevalidateDetail {
+  account: string;
+  accountName: string;
   checked: number;
   ignored: number;
   stillMaintenance: number;
   notFoundOrError: number;
   sampleIgnored: PollVehicle[];
+}
+
+export interface MaintenanceRevalidateResult {
+  dryRun: boolean;
+  limit?: number;
+  accountFilter?: string;
+  totalChecked: number;
+  totalIgnored: number;
+  totalStillMaintenance: number;
+  totalNotFoundOrError: number;
+  sampleIgnored: PollVehicle[];
+  accounts?: AccountRevalidateDetail[];
+  checked?: number;
+  ignored?: number;
+  stillMaintenance?: number;
+  notFoundOrError?: number;
 }
 
 // ── API calls ─────────────────────────────────────────────────────────────────
@@ -91,7 +109,7 @@ export const pollService = {
 
   /** GET /poll/history */
   getHistory: (
-    params: { status?: string; page?: number; limit?: number } = {}
+    params: { status?: string; page?: number; limit?: number; account?: string } = {}
   ): Promise<PollHistoryResponse> =>
     proxyApi.get("/poll/history", { params }).then((r) => r.data),
 
@@ -103,7 +121,7 @@ export const pollService = {
 
   /** POST /poll/history/maintenance/revalidate */
   revalidateMaintenance: (
-    params: { limit?: number; dryRun?: boolean } = {}
+    params: { limit?: number; dryRun?: boolean; account?: string } = {}
   ): Promise<MaintenanceRevalidateResult> =>
     proxyApi
       .post("/poll/history/maintenance/revalidate", null, { params })
@@ -114,8 +132,8 @@ export const pollService = {
     proxyApi.post("/poll/run").then((r) => r.data),
 
   /** POST /poll/reset/:vehicleId */
-  reset: (vehicleId: string): Promise<{ message: string }> =>
-    proxyApi.post(`/poll/reset/${vehicleId}`).then((r) => r.data),
+  reset: (vehicleId: string, account?: string): Promise<{ message: string }> =>
+    proxyApi.post(`/poll/reset/${vehicleId}`, null, { params: { account } }).then((r) => r.data),
 
   /** POST /poll/stop */
   stop: (): Promise<{ message: string }> =>

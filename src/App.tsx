@@ -15,6 +15,7 @@ import VeiculosRegistrar from "@/pages/AddGroupPage";
 import VeiculosRemover from "@/pages/RemoveGroupPage";
 import VeiculosShare from "@/pages/ShareVehicles";
 import VeiculosDeletar from "@/pages/DeleteVehicle";
+import OdometerUpdate from "@/pages/OdometerUpdate";
 import Clients from "@/pages/Clients";
 import Motoristas from "@/pages/Drivers";
 import NotFound from "@/pages/NotFound";
@@ -105,6 +106,16 @@ const App = () => (
                     <ProtectedRoute>
                       <Layout>
                         <VeiculosDeletar />
+                      </Layout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/vehicles/odometer"
+                  element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <OdometerUpdate />
                       </Layout>
                     </ProtectedRoute>
                   }

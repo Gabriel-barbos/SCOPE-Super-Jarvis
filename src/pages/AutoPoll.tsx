@@ -96,9 +96,11 @@ export default function AutoPoll() {
   const [vehicleHistoryPage, setVehicleHistoryPage] = useState(1);
   const [vehicleHistoryTotalPages, setVehicleHistoryTotalPages] = useState(1);
   const [vehicleHistoryStatus, setVehicleHistoryStatus] = useState("all");
+  const [vehicleHistoryAccount, setVehicleHistoryAccount] = useState("all");
   const [loadingVehicleHistory, setLoadingVehicleHistory] = useState(true);
 
   const [revalidating, setRevalidating] = useState(false);
+  const [revalidateAccount, setRevalidateAccount] = useState("all");
   const [revalidatePreview, setRevalidatePreview] =
     useState<MaintenanceRevalidateResult | null>(null);
 
@@ -140,12 +142,15 @@ export default function AutoPoll() {
 
   const fetchVehicleHistory = useCallback(async () => {
     try {
-      const params: { page: number; limit: number; status?: string } = {
+      const params: { page: number; limit: number; status?: string; account?: string } = {
         page: vehicleHistoryPage,
         limit: VEHICLE_HISTORY_LIMIT,
       };
       if (vehicleHistoryStatus !== "all") {
         params.status = vehicleHistoryStatus;
+      }
+      if (vehicleHistoryAccount !== "all") {
+        params.account = vehicleHistoryAccount;
       }
       const data = await pollService.getHistory(params);
       setVehicleHistory(data.items ?? []);
@@ -156,7 +161,7 @@ export default function AutoPoll() {
     } finally {
       setLoadingVehicleHistory(false);
     }
-  }, [toast, vehicleHistoryPage, vehicleHistoryStatus]);
+  }, [toast, vehicleHistoryPage, vehicleHistoryStatus, vehicleHistoryAccount]);
 
   useEffect(() => {
     fetchStatus();
@@ -223,7 +228,7 @@ export default function AutoPoll() {
     if (!resetTarget) return;
     setResetting(true);
     try {
-      await pollService.reset(resetTarget.vehicleId);
+      await pollService.reset(resetTarget.vehicleId, resetTarget.account);
       toast({ title: `Veículo ${resetTarget.vin} resetado com sucesso` });
       setResetTarget(null);
       fetchMaintenance();
@@ -242,32 +247,17 @@ export default function AutoPoll() {
     setTick((t) => t + 1);
   }
 
-  async function handleRevalidateDryRun() {
+  async function handleRevalidateConfirm(account: string) {
     setRevalidating(true);
     try {
       const result = await pollService.revalidateMaintenance({
-        limit: REVALIDATE_LIMIT,
-        dryRun: true,
-      });
-      setRevalidatePreview(result);
-    } catch {
-      toast({ title: "Erro na simulação de revalidação", variant: "destructive" });
-    } finally {
-      setRevalidating(false);
-    }
-  }
-
-  async function handleRevalidateConfirm() {
-    setRevalidating(true);
-    try {
-      const result = await pollService.revalidateMaintenance({
-        limit: REVALIDATE_LIMIT,
+        account: account === "all" ? undefined : account,
         dryRun: false,
       });
       setRevalidatePreview(result);
       toast({
         title: "Revalidação concluída",
-        description: `${result.ignored} veículo(s) movido(s) para Ignorado.`,
+        description: `${result.totalIgnored ?? result.ignored ?? 0} veículo(s) movido(s) para Ignorado.`,
       });
       fetchMaintenance();
       setLoadingVehicleHistory(true);
@@ -565,11 +555,14 @@ export default function AutoPoll() {
         vehicleHistoryTotalPages={vehicleHistoryTotalPages}
         vehicleHistoryStatus={vehicleHistoryStatus}
         setVehicleHistoryStatus={setVehicleHistoryStatus}
+        vehicleHistoryAccount={vehicleHistoryAccount}
+        setVehicleHistoryAccount={setVehicleHistoryAccount}
         setVehicleHistoryPage={setVehicleHistoryPage}
         revalidating={revalidating}
         revalidatePreview={revalidatePreview}
         setRevalidatePreview={setRevalidatePreview}
-        onRevalidateDryRun={handleRevalidateDryRun}
+        revalidateAccount={revalidateAccount}
+        setRevalidateAccount={setRevalidateAccount}
         onRevalidateConfirm={handleRevalidateConfirm}
         resetTarget={resetTarget}
         setResetTarget={setResetTarget}

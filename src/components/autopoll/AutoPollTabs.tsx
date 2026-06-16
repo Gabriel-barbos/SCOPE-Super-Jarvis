@@ -78,12 +78,15 @@ interface AutoPollTabsProps {
   vehicleHistoryTotalPages: number;
   vehicleHistoryStatus: string;
   setVehicleHistoryStatus: (v: string) => void;
+  vehicleHistoryAccount: string;
+  setVehicleHistoryAccount: (v: string) => void;
   setVehicleHistoryPage: React.Dispatch<React.SetStateAction<number>>;
   revalidating: boolean;
   revalidatePreview: MaintenanceRevalidateResult | null;
   setRevalidatePreview: (v: MaintenanceRevalidateResult | null) => void;
-  onRevalidateDryRun: () => void;
-  onRevalidateConfirm: () => void;
+  revalidateAccount: string;
+  setRevalidateAccount: (v: string) => void;
+  onRevalidateConfirm: (account: string) => void;
   resetTarget: PollVehicle | null;
   setResetTarget: (v: PollVehicle | null) => void;
   resetting: boolean;
@@ -111,11 +114,14 @@ export function AutoPollTabs({
   vehicleHistoryTotalPages,
   vehicleHistoryStatus,
   setVehicleHistoryStatus,
+  vehicleHistoryAccount,
+  setVehicleHistoryAccount,
   setVehicleHistoryPage,
   revalidating,
   revalidatePreview,
   setRevalidatePreview,
-  onRevalidateDryRun,
+  revalidateAccount,
+  setRevalidateAccount,
   onRevalidateConfirm,
   resetTarget,
   setResetTarget,
@@ -176,6 +182,11 @@ export function AutoPollTabs({
               setVehicleHistoryStatus(v);
               setVehicleHistoryPage(1);
             }}
+            accountFilter={vehicleHistoryAccount}
+            onAccountChange={(v) => {
+              setVehicleHistoryAccount(v);
+              setVehicleHistoryPage(1);
+            }}
             onPageChange={setVehicleHistoryPage}
             onSelectVehicle={setDetailVehicle}
           />
@@ -193,7 +204,9 @@ export function AutoPollTabs({
             maintTotalPages={maintTotalPages}
             onResetClick={setResetTarget}
             revalidating={revalidating}
-            onRevalidateDryRun={onRevalidateDryRun}
+            revalidateAccount={revalidateAccount}
+            setRevalidateAccount={setRevalidateAccount}
+            onRevalidateClick={() => setConfirmRevalidateOpen(true)}
           />
         </TabsContent>
       </Tabs>
@@ -206,10 +219,6 @@ export function AutoPollTabs({
       <RevalidatePreviewDialog
         preview={revalidatePreview}
         onClose={() => setRevalidatePreview(null)}
-        onConfirm={() => {
-          setRevalidatePreview(null);
-          setConfirmRevalidateOpen(true);
-        }}
       />
 
       <AlertDialog open={confirmRevalidateOpen} onOpenChange={setConfirmRevalidateOpen}>
@@ -218,7 +227,7 @@ export function AutoPollTabs({
             <AlertDialogTitle>Confirmar revalidação</AlertDialogTitle>
             <AlertDialogDescription>
               Esta ação irá alterar o banco de dados, movendo veículos desativados/removidos de
-              manutenção para o status <strong>Ignorado</strong>. Deseja continuar?
+              manutenção para o status <strong>Ignorado</strong> {revalidateAccount !== "all" ? `da conta ${revalidateAccount.toUpperCase()}` : "de todas as contas"}. Deseja continuar?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -226,7 +235,7 @@ export function AutoPollTabs({
             <AlertDialogAction
               onClick={() => {
                 setConfirmRevalidateOpen(false);
-                onRevalidateConfirm();
+                onRevalidateConfirm(revalidateAccount);
               }}
               disabled={revalidating}
               className="bg-orange-600 hover:bg-orange-700"
@@ -347,6 +356,8 @@ function VehicleHistoryTab({
   totalPages,
   statusFilter,
   onStatusChange,
+  accountFilter,
+  onAccountChange,
   onPageChange,
   onSelectVehicle,
 }: {
@@ -357,26 +368,45 @@ function VehicleHistoryTab({
   totalPages: number;
   statusFilter: string;
   onStatusChange: (v: string) => void;
+  accountFilter: string;
+  onAccountChange: (v: string) => void;
   onPageChange: React.Dispatch<React.SetStateAction<number>>;
   onSelectVehicle: (v: PollVehicle) => void;
 }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground shrink-0">Status:</span>
-          <Select value={statusFilter} onValueChange={onStatusChange}>
-            <SelectTrigger className="w-[180px] bg-background">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {VEHICLE_STATUS_FILTERS.map((f) => (
-                <SelectItem key={f.value} value={f.value}>
-                  {f.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground shrink-0">Status:</span>
+            <Select value={statusFilter} onValueChange={onStatusChange}>
+              <SelectTrigger className="w-[150px] bg-background">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {VEHICLE_STATUS_FILTERS.map((f) => (
+                  <SelectItem key={f.value} value={f.value}>
+                    {f.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground shrink-0">Conta:</span>
+            <Select value={accountFilter} onValueChange={onAccountChange}>
+              <SelectTrigger className="w-[150px] bg-background">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                <SelectItem value="brasil">Brasil</SelectItem>
+                <SelectItem value="leaseplan">Leaseplan</SelectItem>
+                <SelectItem value="ald">ALD</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <p className="text-xs text-muted-foreground sm:ml-auto">
           {total} veículo{total !== 1 ? "s" : ""} no total
@@ -418,6 +448,11 @@ function VehicleHistoryTab({
                     </p>
                     <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                       <StatusBadge status={v.status} />
+                      {v.accountName && (
+                        <Badge variant="outline" className="text-[10px] h-5 bg-muted/50 font-medium">
+                          {v.accountName}
+                        </Badge>
+                      )}
                       <span className="text-xs text-muted-foreground">
                         {v.totalAttempts} tentativa{v.totalAttempts !== 1 ? "s" : ""}
                       </span>
@@ -478,7 +513,9 @@ interface MaintenanceTabProps {
   maintTotalPages: number;
   onResetClick: (v: PollVehicle) => void;
   revalidating: boolean;
-  onRevalidateDryRun: () => void;
+  revalidateAccount: string;
+  setRevalidateAccount: (v: string) => void;
+  onRevalidateClick: () => void;
 }
 
 function MaintenanceTab({
@@ -492,32 +529,47 @@ function MaintenanceTab({
   maintTotalPages,
   onResetClick,
   revalidating,
-  onRevalidateDryRun,
+  revalidateAccount,
+  setRevalidateAccount,
+  onRevalidateClick,
 }: MaintenanceTabProps) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border border-dashed border-border/80 bg-muted/20 px-4 py-3">
-        <div>
+        <div className="flex-1">
           <p className="text-sm font-medium">Revalidar manutenções</p>
           <p className="text-xs text-muted-foreground mt-0.5">
             Corrige veículos removidos/desativados marcados como manutenção por engano.
-            Primeiro simula (dry run), depois confirma a execução real.
+            Revalida diretamente o estado no banco de dados.
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onRevalidateDryRun}
-          disabled={revalidating}
-          className="shrink-0 gap-2 border-slate-500/30"
-        >
-          {revalidating ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <ScanSearch className="w-4 h-4" />
-          )}
-          Simular revalidação
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={revalidateAccount} onValueChange={setRevalidateAccount}>
+            <SelectTrigger className="w-[140px] h-9 bg-background">
+              <SelectValue placeholder="Conta" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as Contas</SelectItem>
+              <SelectItem value="brasil">Brasil</SelectItem>
+              <SelectItem value="leaseplan">Leaseplan</SelectItem>
+              <SelectItem value="ald">ALD</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onRevalidateClick}
+            disabled={revalidating}
+            className="shrink-0 h-9 gap-2 border-slate-500/30"
+          >
+            {revalidating ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ScanSearch className="w-4 h-4" />
+            )}
+            Revalidar manutenções
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
@@ -624,6 +676,11 @@ function VehicleCard({
             <span className="text-xs text-muted-foreground">
               {v.totalAttempts} tentativa{v.totalAttempts !== 1 ? "s" : ""}
             </span>
+            {v.accountName && (
+              <Badge variant="outline" className="text-[10px] h-5 bg-muted/50 font-medium">
+                {v.accountName}
+              </Badge>
+            )}
             {v.flaggedAt && (
               <span className="text-xs text-muted-foreground/70">
                 Flagged: {fmtDate(v.flaggedAt)}
@@ -677,6 +734,14 @@ function VehicleDetailDialog({
             <span className="text-muted-foreground">Status:</span>
             <StatusBadge status={vehicle.status} />
           </div>
+          {vehicle.accountName && (
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Conta:</span>
+              <Badge variant="outline" className="text-xs bg-muted/50 font-medium">
+                {vehicle.accountName} ({vehicle.account})
+              </Badge>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Tentativas:</span>
             <span className="font-medium">{vehicle.totalAttempts}</span>
@@ -732,11 +797,9 @@ function VehicleDetailDialog({
 function RevalidatePreviewDialog({
   preview,
   onClose,
-  onConfirm,
 }: {
   preview: MaintenanceRevalidateResult | null;
   onClose: () => void;
-  onConfirm: () => void;
 }) {
   return (
     <Dialog open={!!preview} onOpenChange={(open) => !open && onClose()}>
@@ -744,54 +807,78 @@ function RevalidatePreviewDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ScanSearch className="w-5 h-5 text-slate-400" />
-            {preview?.dryRun ? "Simulação de revalidação" : "Revalidação concluída"}
+            Revalidação Concluída
           </DialogTitle>
           <DialogDescription>
-            {preview?.dryRun
-              ? "Resultado da simulação (nenhuma alteração foi salva)."
-              : "As alterações foram aplicadas no banco de dados."}
+            As alterações de revalidação foram aplicadas no banco de dados.
           </DialogDescription>
         </DialogHeader>
 
         {preview && (
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="rounded-lg border border-border p-3">
-              <p className="text-xs text-muted-foreground">Verificados</p>
-              <p className="text-lg font-semibold tabular-nums">{fmtNumber(preview.checked)}</p>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-lg border border-border p-3">
+                <p className="text-xs text-muted-foreground">Total Verificados</p>
+                <p className="text-lg font-semibold tabular-nums">
+                  {fmtNumber(preview.totalChecked ?? preview.checked ?? 0)}
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-500/20 bg-slate-500/5 p-3">
+                <p className="text-xs text-muted-foreground">→ Total Ignorados</p>
+                <p className="text-lg font-semibold tabular-nums text-slate-400">
+                  {fmtNumber(preview.totalIgnored ?? preview.ignored ?? 0)}
+                </p>
+              </div>
+              <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-3">
+                <p className="text-xs text-muted-foreground">Total Em Manutenção</p>
+                <p className="text-lg font-semibold tabular-nums text-orange-400">
+                  {fmtNumber(preview.totalStillMaintenance ?? preview.stillMaintenance ?? 0)}
+                </p>
+              </div>
+              <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+                <p className="text-xs text-muted-foreground">Total Erro / Não Encontrado</p>
+                <p className="text-lg font-semibold tabular-nums text-red-400">
+                  {fmtNumber(preview.totalNotFoundOrError ?? preview.notFoundOrError ?? 0)}
+                </p>
+              </div>
             </div>
-            <div className="rounded-lg border border-slate-500/20 bg-slate-500/5 p-3">
-              <p className="text-xs text-muted-foreground">→ Ignorados</p>
-              <p className="text-lg font-semibold tabular-nums text-slate-400">
-                {fmtNumber(preview.ignored)}
-              </p>
-            </div>
-            <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-3">
-              <p className="text-xs text-muted-foreground">Manutenção real</p>
-              <p className="text-lg font-semibold tabular-nums text-orange-400">
-                {fmtNumber(preview.stillMaintenance)}
-              </p>
-            </div>
-            <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
-              <p className="text-xs text-muted-foreground">Erro / não encontrado</p>
-              <p className="text-lg font-semibold tabular-nums text-red-400">
-                {fmtNumber(preview.notFoundOrError)}
-              </p>
-            </div>
+
+            {preview.accounts && preview.accounts.length > 0 && (
+              <div className="space-y-2 pt-2 border-t border-border">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Detalhamento por Conta
+                </p>
+                <div className="overflow-x-auto rounded-lg border border-border bg-card">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/40">
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Conta</th>
+                        <th className="px-2 py-2 text-right font-medium text-muted-foreground">Verif.</th>
+                        <th className="px-2 py-2 text-right font-medium text-muted-foreground">Ignor.</th>
+                        <th className="px-2 py-2 text-right font-medium text-muted-foreground">Manut.</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {preview.accounts.map((ac) => (
+                        <tr key={ac.account} className="border-b border-border/50 last:border-0 hover:bg-muted/30">
+                          <td className="px-3 py-2 font-medium">{ac.accountName}</td>
+                          <td className="px-2 py-2 text-right tabular-nums">{fmtNumber(ac.checked)}</td>
+                          <td className="px-2 py-2 text-right tabular-nums text-slate-400">{fmtNumber(ac.ignored)}</td>
+                          <td className="px-2 py-2 text-right tabular-nums text-orange-400">{fmtNumber(ac.stillMaintenance)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            {preview?.dryRun ? "Cancelar" : "Fechar"}
+            Fechar
           </Button>
-          {preview?.dryRun && (
-            <Button
-              onClick={onConfirm}
-              className="bg-orange-600 hover:bg-orange-700 text-white"
-            >
-              Executar revalidação real
-            </Button>
-          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
