@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { Gauge, Play, Loader2, RefreshCw, Clipboard, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { Gauge, Play, Loader2, RefreshCw, Clipboard, CheckCircle2, XCircle, AlertTriangle, Calendar } from "lucide-react";
 import OdometerService, { OdometerInput, OdometerSummary } from "@/services/OdometerService";
 import { OdometerProgressModal } from "@/components/OdometerProgressModal";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export default function OdometerUpdate() {
   const [inputText, setInputText] = useState("");
+  const [usarData, setUsarData] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0, currentChassi: "", status: "" });
   const [log, setLog] = useState<string[]>([]);
@@ -16,10 +19,13 @@ export default function OdometerUpdate() {
   const [summary, setSummary] = useState<OdometerSummary | null>(null);
 
   // Analisa as linhas digitadas em tempo real para pré-visualização
-  const parsedPreview = OdometerService.parsePastedList(inputText);
+  const parsedPreview = OdometerService.parsePastedList(inputText, usarData);
+
+  // Verifica se algum item do preview possui data de ajuste
+  const hasDateColumn = usarData && parsedPreview.some((item) => item.dataAjuste);
 
   async function handleExecute() {
-    const list = OdometerService.parsePastedList(inputText);
+    const list = OdometerService.parsePastedList(inputText, usarData);
 
     if (list.length === 0) {
       toast.error("Nenhum veículo válido encontrado na lista!");
@@ -114,7 +120,10 @@ export default function OdometerUpdate() {
                 Cole a Lista do Excel / CSV
               </label>
               <p className="text-xs text-muted-foreground mb-3">
-                Formatos aceitos: <code className="bg-muted px-1 py-0.5 rounded text-primary">CHASSI ODOMETRO</code>, separado por TAB, ponto e vírgula ou vírgula. Exemplo: <code className="bg-muted px-1 py-0.5 rounded text-foreground font-mono">ABC1234,15000</code>.
+                Formatos aceitos: <code className="bg-muted px-1 py-0.5 rounded text-primary">CHASSI ODOMETRO</code> ou <code className="bg-muted px-1 py-0.5 rounded text-primary">CHASSI ODOMETRO DATA</code>, separado por TAB, ponto e vírgula ou vírgula.
+                {usarData
+                  ? <> Exemplo com data: <code className="bg-muted px-1 py-0.5 rounded text-foreground font-mono">ABC1234{"\t"}15000{"\t"}15/06/2025</code>.</>  
+                  : <> Exemplo: <code className="bg-muted px-1 py-0.5 rounded text-foreground font-mono">ABC1234,15000</code>.</>}
               </p>
 
               <p className="text-xs text-muted-foreground mb-3">
@@ -126,10 +135,33 @@ export default function OdometerUpdate() {
                 id="odometer-list"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder="Cole as colunas aqui...&#10;Exemplo:&#10;3VVSS65N3RM113673	15000&#10;WBAFG9C50DD123456	35400"
-                className="w-full h-60 px-4 py-3 border border-border bg-input text-foreground rounded-lg font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-200"
+                placeholder={usarData
+                  ? "Cole as 3 colunas aqui...\nExemplo:\n3VVSS65N3RM113673\t15000\t15/06/2025\nWBAFG9C50DD123456\t35400\t01/03/2025"
+                  : "Cole as colunas aqui...\nExemplo:\n3VVSS65N3RM113673\t15000\nWBAFG9C50DD123456\t35400"}
+                className="w-full h-56 px-4 py-3 border border-border bg-input text-foreground rounded-lg font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-200"
                 disabled={isProcessing}
               />
+            </div>
+
+            {/* Switch: usar data da planilha */}
+            <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30">
+              <Switch
+                id="usar-data-switch"
+                checked={usarData}
+                onCheckedChange={setUsarData}
+                disabled={isProcessing}
+              />
+              <div className="flex flex-col gap-0.5">
+                <Label htmlFor="usar-data-switch" className="text-sm font-semibold text-foreground flex items-center gap-1.5 cursor-pointer">
+                  <Calendar className="w-3.5 h-3.5 text-blue-400" />
+                  Usar data de ajuste personalizada
+                </Label>
+                <span className="text-[11px] text-muted-foreground">
+                  {usarData
+                    ? "A 3ª coluna será usada como data da medição. Se ausente ou inválida, usa a data atual."
+                    : "Desativado — a data atual será usada como timestamp do ajuste."}
+                </span>
+              </div>
             </div>
 
             <div className="flex items-center justify-between pt-2">
@@ -167,6 +199,9 @@ export default function OdometerUpdate() {
                   <tr className="border-b border-border bg-muted/60 sticky top-0">
                     <th className="p-2.5 font-semibold text-muted-foreground">Chassi/Identificador</th>
                     <th className="p-2.5 font-semibold text-muted-foreground text-right">Novo Odômetro</th>
+                    {hasDateColumn && (
+                      <th className="p-2.5 font-semibold text-muted-foreground text-right">Data Medição</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/60">
@@ -174,6 +209,13 @@ export default function OdometerUpdate() {
                     <tr key={index} className="hover:bg-muted/40 transition">
                       <td className="p-2.5 font-mono text-foreground">{item.chassi}</td>
                       <td className="p-2.5 text-right font-semibold text-blue-400 font-mono">{Number(item.odometro).toLocaleString('pt-BR')} km</td>
+                      {hasDateColumn && (
+                        <td className="p-2.5 text-right font-mono text-emerald-400">
+                          {item.dataAjuste
+                            ? new Date(item.dataAjuste).toLocaleDateString('pt-BR')
+                            : <span className="text-muted-foreground italic">hoje</span>}
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

@@ -7,6 +7,8 @@ export interface OdometerInput {
   chassi: string;
   /** Valor do odômetro em km */
   odometro: string | number;
+  /** Data da medição (opcional). Quando presente, substitui a data atual no ajuste */
+  dataAjuste?: string;
 }
 
 export interface VehicleSearchResult {
@@ -49,8 +51,38 @@ function sanitizeOData(str: string): string {
   return str.replace(/'/g, "''");
 }
 
-/** Parser de lista colada da planilha — suporta TAB, ponto-e-vírgula, vírgula e espaços */
-export function parsePastedList(raw: string): OdometerInput[] {
+/**
+ * Tenta interpretar uma string de data nos formatos mais comuns do Excel brasileiro
+ * (DD/MM/YYYY, YYYY-MM-DD, DD-MM-YYYY) e retorna um ISO string UTC.
+ * Retorna null se não conseguir interpretar.
+ */
+function parseExcelDate(raw: string): string | null {
+  const s = raw.trim();
+
+  // Formato DD/MM/YYYY ou DD/MM/YYYY HH:mm:ss
+  const brMatch = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:[\s T](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  if (brMatch) {
+    const [, d, m, y, hh = "00", mm = "00", ss = "00"] = brMatch;
+    const dt = new Date(`${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}T${hh}:${mm}:${ss}Z`);
+    if (!isNaN(dt.getTime())) return dt.toISOString();
+  }
+
+  // Formato ISO YYYY-MM-DD
+  const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    const dt = new Date(s);
+    if (!isNaN(dt.getTime())) return dt.toISOString();
+  }
+
+  return null;
+}
+
+/**
+ * Parser de lista colada da planilha — suporta TAB, ponto-e-vírgula, vírgula e espaços.
+ * Aceita 2 ou 3 colunas: CHASSI | ODOMETRO | DATA (opcional).
+ * @param usarData  Quando true, tenta ler a 3ª coluna como data de medição
+ */
+export function parsePastedList(raw: string, usarData = false): OdometerInput[] {
   return raw
     .split("\n")
     .map((line) => line.replace(/\r/g, "").trim())
@@ -65,10 +97,12 @@ export function parsePastedList(raw: string): OdometerInput[] {
       const parts = line.split(separator).map((s) => s.trim()).filter(Boolean);
 
       if (parts.length >= 2) {
+        const dataAjuste = usarData && parts[2] ? parseExcelDate(parts[2]) ?? undefined : undefined;
         return {
           chassi: parts[0],
           // Remove caracteres não numéricos (pontos, vírgulas como separador de milhar etc.)
           odometro: parts[1].replace(/[^\d.]/g, ""),
+          ...(dataAjuste ? { dataAjuste } : {}),
         };
       }
       return null;
@@ -133,11 +167,19 @@ async function buscarVeiculo(chassi: string): Promise<VehicleSearchResult | null
   return veiculo;
 }
 
-/** Realiza o ajuste de odômetro via DeviceOdometerAdjustments */
-async function ajustarOdometro(vehicleId: string, odometerValue: string | number): Promise<boolean> {
+/**
+ * Realiza o ajuste de odômetro via DeviceOdometerAdjustments.
+ * @param adjustmentDate  Data ISO do ajuste. Se omitida, usa a data/hora atual.
+ */
+async function ajustarOdometro(
+  vehicleId: string,
+  odometerValue: string | number,
+  adjustmentDate?: string
+): Promise<boolean> {
   try {
     const token = localStorage.getItem("token");
     const valor = parseFloat(String(odometerValue));
+    const eventTimestamp = adjustmentDate ?? new Date().toISOString();
 
     const payload = {
       vehicle_Id: vehicleId,
@@ -145,7 +187,7 @@ async function ajustarOdometro(vehicleId: string, odometerValue: string | number
       decimalOdometer: 0,
       decimalOdometerAdjustment: valor,
       decimalOdometerUserProvidedValue: valor,
-      decimalOdometerAdjustmentEventUtcTimestamp: new Date().toISOString(),
+      decimalOdometerAdjustmentEventUtcTimestamp: eventTimestamp,
     };
 
     await proxyApi.post(
@@ -193,7 +235,7 @@ async function ajustarOdometroEmLote(
   console.log(`[OdometerService] Iniciando ajuste de odometro para ${total} veiculos...`);
 
   for (let i = 0; i < total; i++) {
-    const { chassi, odometro } = veiculos[i];
+    const { chassi, odometro, dataAjuste } = veiculos[i];
 
     // Validação dos dados
     if (!chassi || !odometro) {
@@ -228,8 +270,11 @@ async function ajustarOdometroEmLote(
         onProgress?.(i + 1, total, { chassi, status: "not_found" });
       } else {
         console.log(`[${i + 1}/${total}] Encontrado: ${veiculo.description} (ID: ${veiculo.id})`);
+        if (dataAjuste) {
+          console.log(`[${i + 1}/${total}] Usando data de ajuste: ${dataAjuste}`);
+        }
 
-        const ok = await ajustarOdometro(veiculo.id, odometro);
+        const ok = await ajustarOdometro(veiculo.id, odometro, dataAjuste);
 
         const result: OdometerResult = {
           chassi,
