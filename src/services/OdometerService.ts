@@ -60,7 +60,7 @@ function parseExcelDate(raw: string): string | null {
   const s = raw.trim();
 
   // Formato DD/MM/YYYY ou DD/MM/YYYY HH:mm:ss
-  const brMatch = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:[\s T](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  const brMatch = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})(?:[\s T](\d{2}):(\d{2})(?::(\d{2}))?)?/);
   if (brMatch) {
     const [, d, m, y, hh = "00", mm = "00", ss = "00"] = brMatch;
     const dt = new Date(`${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}T${hh}:${mm}:${ss}Z`);
@@ -78,6 +78,73 @@ function parseExcelDate(raw: string): string | null {
 }
 
 /**
+ * Remove os separadores de milhar (pontos ou vírgulas) e trata decimais,
+ * retornando uma string contendo apenas dígitos numéricos correspondente ao inteiro.
+ */
+function parseOdometerString(raw: string): string {
+  const clean = raw.replace(/[^\d.,]/g, "").trim();
+  if (!clean) return "";
+
+  // Se contiver tanto ponto quanto vírgula:
+  if (clean.includes(".") && clean.includes(",")) {
+    const firstDot = clean.indexOf(".");
+    const firstComma = clean.indexOf(",");
+    if (firstDot < firstComma) {
+      // Ponto é separador de milhar, vírgula é decimal (ex: 10.000,5)
+      const beforeComma = clean.split(",")[0];
+      return beforeComma.replace(/\./g, "");
+    } else {
+      // Vírgula é separador de milhar, ponto é decimal (ex: 10,000.5)
+      const beforeDot = clean.split(".")[0];
+      return beforeDot.replace(/,/g, "");
+    }
+  }
+
+  // Se contiver apenas pontos:
+  if (clean.includes(".")) {
+    const dotsCount = (clean.match(/\./g) || []).length;
+    if (dotsCount > 1) {
+      // Múltiplos pontos -> definitivamente separadores de milhar
+      return clean.replace(/\./g, "");
+    }
+    // Único ponto
+    const parts = clean.split(".");
+    if (parts[1].length === 3) {
+      // Ex: 10.000 ou 10.128 -> separador de milhar
+      return clean.replace(/\./g, "");
+    } else {
+      // Ex: 10.5 ou 10.50 -> separador decimal.
+      // Arredonda para o inteiro mais próximo.
+      const num = Math.round(parseFloat(clean));
+      return isNaN(num) ? "" : String(num);
+    }
+  }
+
+  // Se contiver apenas vírgulas:
+  if (clean.includes(",")) {
+    const commasCount = (clean.match(/,/g) || []).length;
+    if (commasCount > 1) {
+      // Múltiplas vírgulas -> definitivamente separadores de milhar
+      return clean.replace(/,/g, "");
+    }
+    // Única vírgula
+    const parts = clean.split(",");
+    if (parts[1].length === 3) {
+      // Ex: 10,000 ou 10,128 -> separador de milhar
+      return clean.replace(/,/g, "");
+    } else {
+      // Ex: 10,5 ou 10,50 -> separador decimal.
+      const cleanForFloat = clean.replace(",", ".");
+      const num = Math.round(parseFloat(cleanForFloat));
+      return isNaN(num) ? "" : String(num);
+    }
+  }
+
+  // Sem pontos ou vírgulas -> remove qualquer caractere não numérico
+  return clean.replace(/[^\d]/g, "");
+}
+
+/**
  * Parser de lista colada da planilha — suporta TAB, ponto-e-vírgula, vírgula e espaços.
  * Aceita 2 ou 3 colunas: CHASSI | ODOMETRO | DATA (opcional).
  * @param usarData  Quando true, tenta ler a 3ª coluna como data de medição
@@ -91,17 +158,57 @@ export function parsePastedList(raw: string, usarData = false): OdometerInput[] 
       let separator: string | RegExp = ",";
       if (line.includes("\t")) separator = "\t";
       else if (line.includes(";")) separator = ";";
-      else if (line.includes(",")) separator = ",";
-      else separator = /\s+/;
+      else if (line.includes(",")) {
+        const firstCommaIndex = line.indexOf(",");
+        const beforeFirstComma = line.substring(0, firstCommaIndex);
+        if (beforeFirstComma.includes(" ")) {
+          separator = /\s+/;
+        } else {
+          separator = ",";
+        }
+      } else {
+        separator = /\s+/;
+      }
 
-      const parts = line.split(separator).map((s) => s.trim()).filter(Boolean);
+      const parts = line.split(separator)
+        .map((s) => s.trim())
+        .filter((s) => Boolean(s) && s !== "," && s !== ";");
 
       if (parts.length >= 2) {
-        const dataAjuste = usarData && parts[2] ? parseExcelDate(parts[2]) ?? undefined : undefined;
+        const chassi = parts[0];
+        let rawOdometro = "";
+        let dataAjuste: string | undefined = undefined;
+
+        if (separator === ",") {
+          if (usarData && parts.length >= 3) {
+            // Verifica se a última parte é uma data válida
+            const lastPart = parts[parts.length - 1];
+            const parsedDate = parseExcelDate(lastPart);
+            if (parsedDate) {
+              dataAjuste = parsedDate;
+              rawOdometro = parts.slice(1, -1).join(",");
+            } else {
+              rawOdometro = parts.slice(1).join(",");
+            }
+          } else {
+            rawOdometro = parts.slice(1).join(",");
+          }
+        } else {
+          // Separador é TAB, ponto-e-vírgula ou espaços
+          rawOdometro = parts[1];
+          if (usarData && parts[2]) {
+            const parsedDate = parseExcelDate(parts[2]);
+            if (parsedDate) {
+              dataAjuste = parsedDate;
+            }
+          }
+        }
+
+        const cleanOdometro = parseOdometerString(rawOdometro);
+
         return {
-          chassi: parts[0],
-          // Remove caracteres não numéricos (pontos, vírgulas como separador de milhar etc.)
-          odometro: parts[1].replace(/[^\d.]/g, ""),
+          chassi,
+          odometro: cleanOdometro,
           ...(dataAjuste ? { dataAjuste } : {}),
         };
       }
@@ -178,7 +285,7 @@ async function ajustarOdometro(
 ): Promise<boolean> {
   try {
     const token = localStorage.getItem("token");
-    const valor = parseFloat(String(odometerValue));
+    const valor = Math.round(parseFloat(String(odometerValue)));
     const eventTimestamp = adjustmentDate ?? new Date().toISOString();
 
     const payload = {
